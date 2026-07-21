@@ -20,6 +20,9 @@
   header{text-align:center; padding:8px 0 16px}
   header h1{margin:0 0 4px; font-size:clamp(20px,4vw,28px)}
   header .sub{color:var(--muted); font-size:14px}
+  .lang-toggle{display:inline-flex; gap:0; margin:8px 0 0; border:1px solid var(--panel2); border-radius:8px; overflow:hidden}
+  .lang-toggle button{background:var(--panel); color:var(--muted); border:none; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit}
+  .lang-toggle button.active{background:var(--accent); color:#052e16}
   .card{background:var(--panel); border-radius:12px; padding:16px; margin-bottom:14px; box-shadow:0 4px 14px rgba(0,0,0,.35)}
   label{display:block; font-size:13px; color:var(--muted); margin:10px 0 4px}
   input{width:100%; padding:12px; border-radius:10px; border:2px solid var(--panel2); background:var(--bg); color:var(--text); font-size:16px; font-family:inherit}
@@ -54,23 +57,27 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>📋 Coach Dashboard</h1>
-    <div class="sub">Sommarbingo U11-U13 · se alla spelares framsteg</div>
+    <h1>📋 <span id="hTitle"></span></h1>
+    <div class="sub" id="hSub"></div>
+    <div class="lang-toggle">
+      <button id="langSv" class="active" onclick="setLang('sv')">SV</button>
+      <button id="langEn" onclick="setLang('en')">EN</button>
+    </div>
   </header>
 
   <div class="card">
-    <label for="teamCode">Lagkod</label>
+    <label for="teamCode" id="lblTeam"></label>
     <div class="toolbar">
       <input id="teamCode" type="text" placeholder="t.ex. GBK" style="flex:1; min-width:120px" autocomplete="off">
-      <button class="btn-primary" id="loadBtn">Ladda spelare</button>
-      <button class="btn-secondary" id="refreshBtn">↻ Uppdatera</button>
+      <button class="btn-primary" id="loadBtn"></button>
+      <button class="btn-secondary" id="refreshBtn"></button>
     </div>
     <div class="status" id="status"></div>
   </div>
 
   <div class="card" id="playersCard" style="display:none">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px">
-      <h3 style="margin:0">Spelare i <span id="teamLabel"></span></h3>
+      <h3 style="margin:0"><span id="lblPlayersIn"></span> <span id="teamLabel"></span></h3>
       <span class="updated" id="lastLoad"></span>
     </div>
     <div id="playersTable"></div>
@@ -80,6 +87,70 @@
 <script>
 let awDatabases = null;
 let currentTeam = "";
+let lang = localStorage.getItem("sommarbingo.lang") || "sv";
+
+const I18N = {
+  sv: {
+    hTitle: "Coach Dashboard",
+    hSub: "Sommarbingo U11-U13 · se alla spelares framsteg",
+    lblTeam: "Lagkod",
+    loadBtn: "Ladda spelare",
+    refreshBtn: "↻ Uppdatera",
+    lblPlayersIn: "Spelare i",
+    thPlayer: "Spelare", thBingo: "Bingo", thStyrke: "Styrke", thTotal: "Total",
+    thUpdated: "Uppdaterad", thDetail: "", detailBtn: "Detaljer",
+    bingoLabel: "Bingo-bricka (grön=klar, gul=styrke):",
+    styrkeLabel: "Styrkegymnastik:",
+    empty: "Inga spelare har registrerat sig för detta lagkod än.",
+    loading: "Laddar...",
+    enterTeam: "Ange lagkod.",
+    notConfigured: "Appwrite inte konfigurerad.",
+    loadFail: (m) => "Kunde inte ladda: " + m,
+    playersCount: (n) => `${n} spelare`,
+    updatedPrefix: "Uppdaterad ",
+  },
+  en: {
+    hTitle: "Coach Dashboard",
+    hSub: "Summer Bingo U11-U13 · see all players' progress",
+    lblTeam: "Team code",
+    loadBtn: "Load players",
+    refreshBtn: "↻ Refresh",
+    lblPlayersIn: "Players in",
+    thPlayer: "Player", thBingo: "Bingo", thStyrke: "Strength", thTotal: "Total",
+    thUpdated: "Updated", thDetail: "", detailBtn: "Details",
+    bingoLabel: "Bingo board (green=done, yellow=strength):",
+    styrkeLabel: "Strength program:",
+    empty: "No players have registered for this team code yet.",
+    loading: "Loading...",
+    enterTeam: "Enter team code.",
+    notConfigured: "Appwrite not configured.",
+    loadFail: (m) => "Could not load: " + m,
+    playersCount: (n) => `${n} players`,
+    updatedPrefix: "Updated ",
+  }
+};
+function t(key){ const v = I18N[lang][key]; return typeof v === "function" ? v : v; }
+
+function setLang(l){
+  lang = l;
+  localStorage.setItem("sommarbingo.lang", l);
+  document.documentElement.lang = l;
+  document.getElementById("langSv").classList.toggle("active", l === "sv");
+  document.getElementById("langEn").classList.toggle("active", l === "en");
+  applyTexts();
+  if (currentTeam) renderPlayers(currentTeam, lastPlayers);
+}
+
+let lastPlayers = [];
+
+function applyTexts(){
+  document.getElementById("hTitle").textContent = t("hTitle");
+  document.getElementById("hSub").textContent = t("hSub");
+  document.getElementById("lblTeam").textContent = t("lblTeam");
+  document.getElementById("loadBtn").textContent = t("loadBtn");
+  document.getElementById("refreshBtn").textContent = t("refreshBtn");
+  document.getElementById("lblPlayersIn").textContent = t("lblPlayersIn");
+}
 
 function initAppwrite(){
   if (window.APPWRITE_PROJECT_ID && window.Appwrite){
@@ -97,11 +168,11 @@ function setStatus(msg, kind){
 }
 
 async function loadPlayers(){
-  if (!awDatabases){ setStatus("Appwrite inte konfigurerad.", "err"); return; }
+  if (!awDatabases){ setStatus(t("notConfigured"), "err"); return; }
   const team = document.getElementById("teamCode").value.trim();
-  if (!team){ setStatus("Ange lagkod.", "err"); return; }
+  if (!team){ setStatus(t("enterTeam"), "err"); return; }
   currentTeam = team;
-  setStatus("Laddar...", "");
+  setStatus(t("loading"), "");
   try {
     const res = await awDatabases.listDocuments(
       window.APPWRITE_DATABASE_ID,
@@ -109,11 +180,12 @@ async function loadPlayers(){
       [window.Appwrite.Query.equal("team_code", team), window.Appwrite.Query.limit(100)]
     );
     const players = (res.documents || []).slice().sort((a,b) => (a.player_name||"").localeCompare(b.player_name||""));
+    lastPlayers = players;
     renderPlayers(team, players);
-    setStatus(`${players.length} spelare`, "ok");
-    document.getElementById("lastLoad").textContent = "Uppdaterad " + new Date().toLocaleTimeString("sv-SE");
+    setStatus(t("playersCount")(players.length), "ok");
+    document.getElementById("lastLoad").textContent = t("updatedPrefix") + new Date().toLocaleTimeString("sv-SE");
   } catch(e){
-    setStatus("Kunde inte ladda: " + (e.message || e), "err");
+    setStatus(t("loadFail")(e.message || e), "err");
   }
 }
 
@@ -122,14 +194,15 @@ function safeParse(s, fallback){
 }
 
 function renderPlayers(team, players){
+  if (!players) return;
   document.getElementById("playersCard").style.display = "block";
   document.getElementById("teamLabel").textContent = team;
   const wrap = document.getElementById("playersTable");
   if (!players.length){
-    wrap.innerHTML = '<div class="empty">Inga spelare har registrerat sig för detta lagkod än.</div>';
+    wrap.innerHTML = `<div class="empty">${t("empty")}</div>`;
     return;
   }
-  let html = '<table><thead><tr><th>Spelare</th><th>Bingo</th><th>Styrke</th><th>Total</th><th>Uppdaterad</th><th></th></tr></thead><tbody>';
+  let html = `<table><thead><tr><th>${t("thPlayer")}</th><th>${t("thBingo")}</th><th>${t("thStyrke")}</th><th>${t("thTotal")}</th><th>${t("thUpdated")}</th><th>${t("thDetail")}</th></tr></thead><tbody>`;
   players.forEach((p, i) => {
     const bingo = safeParse(p.bingo, []);
     const styrke = safeParse(p.styrke, []);
@@ -144,12 +217,12 @@ function renderPlayers(team, players){
       <td><span class="num">${styrkeDone}/19</span> <span class="pct-bar styrke"><div style="width:${styrkePct}%"></div></span></td>
       <td><span class="num">${bingoDone + styrkeDone}/49</span></td>
       <td class="updated">${updated}</td>
-      <td><button class="btn-secondary" style="padding:6px 10px; font-size:12px" onclick="toggleDetail(${i})">Detaljer</button></td>
+      <td><button class="btn-secondary" style="padding:6px 10px; font-size:12px" onclick="toggleDetail(${i})">${t("detailBtn")}</button></td>
     </tr>`;
     html += `<tr class="row-detail" id="detail-${i}"><td colspan="6">
-      <div style="margin-bottom:8px; color:var(--muted); font-size:12px">Bingo-bricka (grön=klar, gul=styrke):</div>
+      <div style="margin-bottom:8px; color:var(--muted); font-size:12px">${t("bingoLabel")}</div>
       <div class="mini-grid">${renderMiniBingo(bingo)}</div>
-      <div style="margin:10px 0 6px; color:var(--muted); font-size:12px">Styrkegymnastik:</div>
+      <div style="margin:10px 0 6px; color:var(--muted); font-size:12px">${t("styrkeLabel")}</div>
       <div>${renderStyrkeList(styrke)}</div>
     </td></tr>`;
   });
@@ -169,7 +242,7 @@ function renderMiniBingo(bingo){
 
 function renderStyrkeList(styrke){
   let html = "<div style='display:flex; flex-wrap:wrap; gap:4px'>";
-  STYRKE_NAMES.forEach((name, i) => {
+  STYRKE_NAMES[lang].forEach((name, i) => {
     const st = styrke[i] || {};
     const done = st.done;
     const stat = done ? "✓" : (st.count != null ? `${st.count}` : st.elapsed != null ? `${st.elapsed}s` : "—");
@@ -187,19 +260,18 @@ function toggleDetail(i){
 function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
 const STYRKE_CELLS = [13, 21, 24];
-const STYRKE_NAMES = [
-  "Uppvärmning","Fallskärmshopparen","Klockan","Sidoplankan","Skridskohopp",
-  "Enbensböj","Diagonalen","Skidhopp","Dips","Grodhopp",
-  "Plankan","Utfallssteg","Ryggresningar","Tåhävningar","Bulgariska utfall",
-  "Armhävningar","Defensivsteg","Fällkniv","Steg upp på bänk"
-];
-const STYRKE_COUNT = STYRKE_NAMES.length;
+const STYRKE_NAMES = {
+  sv: ["Uppvärmning","Fallskärmshopparen","Klockan","Sidoplanka","Skridskohopp","Enbensböj","Diagonalen","Skidhopp","Dips","Grodhopp","Plankan","Utfallssteg","Ryggresningar","Tåhävningar","Bulgariska utfall","Armhävningar","Defensivsteg","Fällkniv","Steg upp på bänk"],
+  en: ["Warm-up","Parachute jump","The clock","Side plank","Skate jumps","Single-leg squat","The diagonal","Skier jumps","Dips","Frog jumps","Plank","Lunges","Back raises","Calf raises","Bulgarian split squats","Push-ups","Defensive steps","V-sit","Step up onto bench"]
+};
+const STYRKE_COUNT = STYRKE_NAMES.sv.length;
 
 document.getElementById("loadBtn").onclick = loadPlayers;
 document.getElementById("refreshBtn").onclick = () => { if (currentTeam) loadPlayers(); };
 document.getElementById("teamCode").addEventListener("keydown", e => { if (e.key === "Enter") loadPlayers(); });
 
 initAppwrite();
+setLang(lang);
 if (window.DEFAULT_TEAM_CODE){
   document.getElementById("teamCode").value = window.DEFAULT_TEAM_CODE;
   loadPlayers();
