@@ -73,22 +73,12 @@
   .detail-section{margin-top:14px}
   .detail-section .label{font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px}
   .mini-grid{display:grid; grid-template-columns:repeat(10,1fr); gap:4px; max-width:100%}
-  .mini-cell{aspect-ratio:1; background:var(--surface2); border-radius:5px; font-size:9px; display:flex; align-items:center; justify-content:center; color:var(--dim); font-weight:700}
-  .mini-cell.done{background:var(--green); color:#052e16}
-  .mini-cell.styrke{background:var(--surface3)}
-  .mini-cell.styrke.done{background:var(--amber); color:#1e1308}
   .styrke-chips{display:flex; flex-wrap:wrap; gap:5px}
   .styrke-chip{font-size:11px; padding:4px 8px; border-radius:6px; background:var(--surface2); color:var(--text); font-weight:600}
   .styrke-chip.done{background:var(--green); color:#052e16}
   .styrke-chip .stat{font-weight:800; margin-left:4px}
 
   .empty{text-align:center; color:var(--muted); padding:40px 20px; font-size:14px}
-  .mini-cell.has-note{box-shadow:0 0 0 2px var(--amber) inset}
-  .notes-list{display:flex; flex-direction:column; gap:6px}
-  .note-item{display:flex; gap:8px; padding:8px 10px; background:var(--surface2); border-radius:8px; font-size:12px; line-height:1.4}
-  .note-item.done{border-left:3px solid var(--green)}
-  .note-item .note-idx{font-weight:800; color:var(--amber-l); flex-shrink:0; min-width:32px}
-  .note-item .note-text{color:var(--text); word-break:break-word}
 
   /* Desktop */
   @media (min-width:900px){
@@ -105,6 +95,37 @@
     .mini-cell{font-size:11px}
     .login-card{max-width:420px !important; padding:36px 32px !important}
   }
+
+  /* Modal */
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-end; justify-content:center; z-index:200; padding:0}
+  .modal.show{display:flex; animation:fadeIn .2s}
+  .modal-card{background:var(--surface); border-radius:var(--radius-lg) var(--radius-lg) 0 0; padding:20px; width:100%; max-width:480px; max-height:85vh; overflow-y:auto; box-shadow:0 -4px 24px rgba(0,0,0,.4); animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)}
+  .grip{width:40px; height:4px; background:var(--surface3); border-radius:2px; margin:0 auto 16px}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  @media (min-width:900px){
+    .modal{align-items:center; padding:20px}
+    .modal-card{border-radius:var(--radius-lg); max-width:480px; max-height:88vh}
+    .grip{display:none}
+  }
+
+  /* Mini-grid with inline date + clickable notes */
+  .mini-cell{position:relative; aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:8px; background:var(--surface2); font-size:13px; font-weight:700; color:var(--muted); border:1px solid transparent}
+  .mini-cell.done{background:var(--green); color:#052e16; border-color:var(--green)}
+  .mini-cell.styrke{background:var(--amber); color:#1e1308; border-color:var(--amber)}
+  .mini-cell.has-note{box-shadow:0 0 0 2px var(--amber) inset}
+  .mini-cell.clickable{cursor:pointer}
+  .mini-cell.clickable:active{transform:scale(.95)}
+  .mini-num{font-size:13px; font-weight:800}
+  .mini-note{position:absolute; top:2px; right:3px; font-size:10px}
+  .mini-date{position:absolute; bottom:1px; left:0; right:0; text-align:center; font-size:8px; opacity:.75; font-weight:600}
+  .mini-cell.done .mini-date{color:#052e16}
+
+  /* Cell detail rows */
+  .cell-detail-row{display:flex; gap:10px; padding:12px; background:var(--surface2); border-radius:8px; margin-bottom:8px; align-items:flex-start}
+  .cell-detail-label{font-size:18px; flex-shrink:0}
+  .cell-detail-val{font-size:14px; color:var(--text); line-height:1.5; word-break:break-word}
+  .cell-detail-val.note-val{white-space:pre-wrap}
 </style>
 </head>
 <body>
@@ -158,6 +179,16 @@
   </div>
 </div>
 
+<div class="modal" id="cellDetailModal">
+  <div class="modal-card">
+    <div class="grip"></div>
+    <h2 id="cellDetailTitle" style="color:var(--text);font-size:16px;font-weight:800;margin:0 0 4px"></h2>
+    <div id="cellDetailSub" style="color:var(--muted);font-size:12px;margin-bottom:16px"></div>
+    <div id="cellDetailBody"></div>
+    <button onclick="closeCellDetail()" style="width:100%;margin-top:16px;padding:14px;font-size:14px;font-weight:700;border:none;border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);cursor:pointer;font-family:inherit">OK</button>
+  </div>
+</div>
+
 <script>
 let awDatabases = null;
 let currentTeam = "";
@@ -170,12 +201,14 @@ const I18N = {
     empty: "Inga spelare har registrerat sig för detta lagkod än.",
     loading: "Laddar...", enterTeam: "Ange lagkod.", notConfigured: "Appwrite inte konfigurerad.",
     loadFail: m => "Kunde inte ladda: " + m, playersCount: n => `${n} spelare`,
-    updatedPrefix: "Uppdaterad ", bingoLabel: "Bingo-bricka (grön=klar, gul=styrke):",
+    updatedPrefix: "Uppdaterad ",
     styrkeLabel: "Styrkegymnastik:", detailTap: "Tryck för att visa/dölja detaljer",
     coachLoginTitle: "Coach-inloggning", coachLoginDesc: "Ange lösenord för att se spelarnas framsteg.",
     lblCoachPw: "Lösenord", coachPwBtn: "Logga in", coachPwWrong: "Fel lösenord.",
     notesLabel: "Anteckningar:",
     datesLabel: "Datum:",
+    noNote: "Ingen anteckning.",
+    bingoLabel: "Bingo-bricka (grön=klar, gul=styrke, 📝=anteckning — tryck för att läsa):",
   },
   en: {
     hTitle: "Coach", hSub: "Summer Bingo U11-U13 · see all players' progress",
@@ -183,12 +216,14 @@ const I18N = {
     empty: "No players have registered for this team code yet.",
     loading: "Loading...", enterTeam: "Enter team code.", notConfigured: "Appwrite not configured.",
     loadFail: m => "Could not load: " + m, playersCount: n => `${n} players`,
-    updatedPrefix: "Updated ", bingoLabel: "Bingo board (green=done, yellow=strength):",
+    updatedPrefix: "Updated ",
     styrkeLabel: "Strength program:", detailTap: "Tap to show/hide details",
     coachLoginTitle: "Coach login", coachLoginDesc: "Enter password to view players' progress.",
     lblCoachPw: "Password", coachPwBtn: "Log in", coachPwWrong: "Wrong password.",
     notesLabel: "Notes:",
     datesLabel: "Dates:",
+    noNote: "No note.",
+    bingoLabel: "Bingo board (green=done, yellow=strength, 📝=note — tap to read):",
   }
 };
 function t(key){ const v = I18N[lang][key]; return typeof v === "function" ? v : v; }
@@ -300,6 +335,8 @@ function renderPlayers(players){
       if (k.startsWith("date:")) dates[k.slice(5)] = merged[k];
       else notes[k] = merged[k];
     });
+    window._currentNotes = notes;
+    window._currentDates = dates;
     const bingoDone = bingo.length;
     const styrkeCompletions = STYRKE_CELLS.filter(idx => bingo.includes(idx)).length;
     const pct = Math.round((bingoDone / 30) * 100);
@@ -329,50 +366,58 @@ function renderPlayers(players){
       <div class="detail">
         <div class="detail-section">
           <div class="label">${t("bingoLabel")}</div>
-          <div class="mini-grid">${renderMiniBingo(bingo, notes, dates)}</div>
+          <div class="mini-grid">${renderMiniBingo(bingo, notes, dates, p.player_name)}</div>
         </div>
-        ${Object.keys(dates).length ? `<div class="detail-section">
-          <div class="label">${t("datesLabel")}</div>
-          <div class="dates-list">${renderDates(dates, bingo)}</div>
-        </div>` : ""}
-        ${Object.keys(notes).length ? `<div class="detail-section">
-          <div class="label">${t("notesLabel")}</div>
-          <div class="notes-list">${renderNotes(notes, bingo)}</div>
-        </div>` : ""}
       </div>
     </div>`;
   }).join("");
 }
 
-function renderMiniBingo(bingo, notes, dates){
+function renderMiniBingo(bingo, notes, dates, playerName){
   let html = "";
   for (let i = 0; i < 30; i++){
     const done = bingo.includes(i);
     const isStyrke = STYRKE_CELLS.includes(i);
     const hasNote = notes && notes[i];
-    const dateStr = dates && dates[i] ? dates[i] : "";
-    const titleParts = [];
-    if (hasNote) titleParts.push("📝 " + notes[i]);
-    if (dateStr) titleParts.push("📅 " + dateStr);
-    html += `<div class="mini-cell ${done?'done':''} ${isStyrke?'styrke':''} ${hasNote?'has-note':''}" title="${escapeHtml(titleParts.join(' | '))}">${i+1}${hasNote?'📝':''}</div>`;
+    const dateStr = dates && dates[i] ? dates[i].slice(5) : ""; // MM-DD
+    const label = cellLabel(i, isStyrke);
+    const clickable = hasNote ? "clickable" : "";
+    const onclick = hasNote ? `onclick="showCellDetail(${i}, ${JSON.stringify(playerName).replace(/"/g,'&quot;')})"` : "";
+    const dateHtml = dateStr ? `<span class="mini-date">${dateStr}</span>` : "";
+    const noteHtml = hasNote ? '<span class="mini-note">📝</span>' : '';
+    html += `<div class="mini-cell ${done?'done':''} ${isStyrke?'styrke':''} ${hasNote?'has-note':''} ${clickable}" ${onclick} title="${escapeHtml(label)}"><span class="mini-num">${i+1}</span>${noteHtml}${dateHtml}</div>`;
   }
   return html;
 }
 
-function renderDates(dates, bingo){
-  return Object.keys(dates).sort((a,b) => Number(a) - Number(b)).map(idx => {
-    const i = Number(idx);
-    const done = bingo.includes(i);
-    return `<div class="note-item ${done?'done':''}"><span class="note-idx">#${i+1}</span><span class="note-text">📅 ${escapeHtml(dates[idx])}</span></div>`;
-  }).join("");
+function cellLabel(i, isStyrke){
+  if (isStyrke) return lang === "sv" ? "Styrkegymnastik" : "Strength program";
+  const row = Math.floor(i / 6), col = i % 6;
+  const cell = BINGO_LABELS[row][col];
+  if (typeof cell === "string") return cell;
+  return cell[lang] || cell.sv;
 }
 
-function renderNotes(notes, bingo){
-  return Object.keys(notes).sort((a,b) => Number(a) - Number(b)).map(idx => {
-    const i = Number(idx);
-    const done = bingo.includes(i);
-    return `<div class="note-item ${done?'done':''}"><span class="note-idx">#${i+1}</span><span class="note-text">${escapeHtml(notes[idx])}</span></div>`;
-  }).join("");
+function showCellDetail(idx, playerName){
+  const label = cellLabel(idx, STYRKE_CELLS.includes(idx));
+  const note = window._currentNotes && window._currentNotes[idx] || "";
+  const date = window._currentDates && window._currentDates[idx] || "";
+  const modal = document.getElementById("cellDetailModal");
+  const title = document.getElementById("cellDetailTitle");
+  const sub = document.getElementById("cellDetailSub");
+  const body = document.getElementById("cellDetailBody");
+  title.textContent = `#${idx+1} · ${label}`;
+  sub.textContent = playerName;
+  let html = "";
+  if (date) html += `<div class="cell-detail-row"><span class="cell-detail-label">📅</span><span class="cell-detail-val">${escapeHtml(date)}</span></div>`;
+  if (note) html += `<div class="cell-detail-row"><span class="cell-detail-label">📝</span><span class="cell-detail-val note-val">${escapeHtml(note)}</span></div>`;
+  if (!html) html = `<div style="color:var(--muted);text-align:center;padding:20px">${t("noNote")}</div>`;
+  body.innerHTML = html;
+  modal.classList.add("show");
+}
+
+function closeCellDetail(){
+  document.getElementById("cellDetailModal").classList.remove("show");
 }
 
 function renderStyrkeChips(styrke){
@@ -388,6 +433,56 @@ function toggleRow(i){ document.getElementById("row-" + i).classList.toggle("exp
 function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
 const STYRKE_CELLS = [19, 27, 30];
+const BINGO_LABELS = [
+  [
+    {sv:"Hoppa 2×100 hopprep (backa 5 om du missar)",en:"Jump 2×100 jump rope (go back 5 if you miss)"},
+    {sv:"Växla gång 20s/rusch 10s i 10 min",en:"Alternate walk 20s/sprint 10s for 10 min"},
+    {sv:"Spring 5 varv runt ett hus",en:"Run 5 laps around a house"},
+    {sv:"10 utfallssteg + 10 skridskohopp, 3 omg!",en:"10 lunges + 10 skate jumps, 3 rounds!"},
+    {sv:"Jogga 15 min utan att stanna",en:"Jog 15 min without stopping"},
+    {sv:"Eget pass i minst 15 min",en:"Your own workout, at least 15 min"},
+  ],
+  [
+    {sv:"Krabbgång 20m + spindelgång 20m, 4 omg!",en:"Crab walk 20m + spider walk 20m, 4 rounds!"},
+    {sv:"Gå baklänges 2 min + 2×30s plankan",en:"Walk backwards 2 min + 2×30s plank"},
+    {sv:"Eget pass i minst 15 min",en:"Your own workout, at least 15 min"},
+    {sv:"Kasta tennisboll mot vägg, fånga efter studs, 50 ggr",en:"Throw tennis ball at wall, catch after bounce, 50 times"},
+    {sv:"5×5 upphopp maxhöjd + 20 sit-ups",en:"5×5 max-height jumps + 20 sit-ups"},
+    {sv:"Fysisk sport i minst 1 timme",en:"Physical sport for at least 1 hour"},
+  ],
+  [
+    {sv:"9×10s snabba fötter + 3×10 burpees",en:"9×10s quick feet + 3×10 burpees"},
+    {sv:"Spela badminton minst 1 timme",en:"Play badminton at least 1 hour"},
+    {sv:"Jonglera backhand/forehand, 30 i rad",en:"Juggle backhand/forehand, 30 in a row"},
+    {sv:"Ät 2 glassar på en dag + gör bomben när du badar",en:"Eat 2 ice creams in one day + do the bomb when you swim"},
+    {sv:"Lek jage 10 min + 2×10 armhävningar",en:"Play tag 10 min + 2×10 push-ups"},
+    {sv:"Växla jogg 20s/rusch 10s i 10 min",en:"Alternate jog 20s/sprint 10s for 10 min"},
+  ],
+  [
+    {sv:"Hinderbana med 5 hinder, klara den, 3 omg!",en:"Obstacle course with 5 obstacles, complete it, 3 rounds!"},
+    "STYRKE",
+    {sv:"Spring i trappor 5 ggr, minst 10 steg",en:"Run stairs 5 times, at least 10 steps"},
+    {sv:"Cykla 20 min + 1 yoga-pose i 1 min",en:"Bike 20 min + 1 yoga pose for 1 min"},
+    {sv:"Balans på ett ben 2×30s, 3 omg",en:"Balance on one leg 2×30s, 3 rounds"},
+    {sv:"Backträning 10 ggr (10-15s löpning)",en:"Hill training 10 times (10-15s running)"},
+  ],
+  [
+    {sv:"Balansgång 1 min fram + bak",en:"Balance walk 1 min forward + backward"},
+    {sv:"Dansa till en låt (~3 min) + 4×5 hoppsmashar",en:"Dance to a song (~3 min) + 4×5 jump smashes"},
+    {sv:"8×10s snabba fötter + 3×10 burpees",en:"8×10s quick feet + 3×10 burpees"},
+    "STYRKE",
+    {sv:"Grodhopp till ett träd, minst 10m, 3 ggr!",en:"Frog jump to a tree, at least 10m, 3 times!"},
+    {sv:"Spela badminton minst 1 timme",en:"Play badminton at least 1 hour"},
+  ],
+  [
+    "STYRKE",
+    {sv:"Jogga/spring minst 20 min",en:"Jog/run at least 20 min"},
+    {sv:"Backträning 10 ggr (10-15s löpning)",en:"Hill training 10 times (10-15s running)"},
+    {sv:"Spring i trappor 5 ggr, minst 10 steg",en:"Run stairs 5 times, at least 10 steps"},
+    {sv:"Hoppa 2×100 hopprep (backa 5 om du missar)",en:"Jump 2×100 jump rope (go back 5 if you miss)"},
+    {sv:"Spring i trappor 5 ggr, minst 10 steg",en:"Run stairs 5 times, at least 10 steps"},
+  ],
+];
 const STYRKE_NAMES = {
   sv: ["Uppvärmning","Fallskärmshopparen","Klockan","Sidoplanka","Skridskohopp","Enbensböj","Diagonalen","Skidhopp","Dips","Grodhopp","Plankan","Utfallssteg","Ryggresningar","Tåhävningar","Bulgariska utfall","Armhävningar","Defensivsteg","Fällkniv","Steg upp på bänk"],
   en: ["Warm-up","Parachute jump","The clock","Side plank","Skate jumps","Single-leg squat","The diagonal","Skier jumps","Dips","Frog jumps","Plank","Lunges","Back raises","Calf raises","Bulgarian split squats","Push-ups","Defensive steps","V-sit","Step up onto bench"]
@@ -396,6 +491,7 @@ const STYRKE_NAMES = {
 document.getElementById("loadBtn").onclick = loadPlayers;
 document.getElementById("refreshBtn").onclick = () => { if (currentTeam) loadPlayers(); };
 document.getElementById("teamCode").addEventListener("keydown", e => { if (e.key === "Enter") loadPlayers(); });
+document.getElementById("cellDetailModal").onclick = (e) => { if (e.target.id === "cellDetailModal") closeCellDetail(); };
 
 initAppwrite();
 setLang(lang);
