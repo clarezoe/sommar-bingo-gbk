@@ -1,6 +1,8 @@
-// Supabase configuration
-// Fill in your project URL and anon key after registering at https://supabase.com
-// The anon key is safe to expose publicly — Row Level Security protects the data.
-window.SUPABASE_URL = "YOUR_PROJECT_URL";
-window.SUPABASE_ANON_KEY = "YOUR_ANON_KEY";
+// Appwrite Cloud configuration
+// Frontend SDK uses Project ID + endpoint only. Data is protected by table permissions.
+// The API key (server-only) is NOT included here — it's never exposed to the browser.
+window.APPWRITE_ENDPOINT = "https://fra.cloud.appwrite.io/v1";
+window.APPWRITE_PROJECT_ID = "6a5fbff9003d75f889af";
+window.APPWRITE_DATABASE_ID = "6a5fc1470035f5150049";
+window.APPWRITE_TABLE_ID = "progress";
 window.DEFAULT_TEAM_CODE = "GBK";

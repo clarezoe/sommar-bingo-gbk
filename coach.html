@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Coach — Sommarbingo</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/appwrite@17"></script>
 <script src="./config.js"></script>
 <style>
   :root{
@@ -28,7 +28,6 @@
   button:active{transform:scale(.96)}
   .btn-primary{background:var(--accent); color:#052e16}
   .btn-secondary{background:var(--panel2); color:var(--text)}
-  .btn-warn{background:var(--accent2); color:#1e293b}
   .toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
   .status{font-size:12px; color:var(--muted); margin-top:8px}
   .status.err{color:var(--danger)}
@@ -50,7 +49,6 @@
   .mini-cell.styrke.done{background:var(--accent2); color:#1e293b}
   .updated{color:var(--muted); font-size:11px}
   .empty{text-align:center; color:var(--muted); padding:30px; font-size:14px}
-  a{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -80,12 +78,15 @@
 </div>
 
 <script>
-let supa = null;
+let awDatabases = null;
 let currentTeam = "";
 
-function initSupabase(){
-  if (window.SUPABASE_URL && window.SUPABASE_URL !== "YOUR_PROJECT_URL" && window.supabase){
-    supa = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+function initAppwrite(){
+  if (window.APPWRITE_PROJECT_ID && window.Appwrite){
+    const client = new window.Appwrite.Client()
+      .setEndpoint(window.APPWRITE_ENDPOINT)
+      .setProject(window.APPWRITE_PROJECT_ID);
+    awDatabases = new window.Appwrite.Databases(client);
   }
 }
 
@@ -96,23 +97,28 @@ function setStatus(msg, kind){
 }
 
 async function loadPlayers(){
-  if (!supa){ setStatus("Supabase inte konfigurerad. Fyll i config.js.", "err"); return; }
+  if (!awDatabases){ setStatus("Appwrite inte konfigurerad.", "err"); return; }
   const team = document.getElementById("teamCode").value.trim();
   if (!team){ setStatus("Ange lagkod.", "err"); return; }
   currentTeam = team;
   setStatus("Laddar...", "");
   try {
-    const { data, error } = await supa.from("progress")
-      .select("player_name, bingo, styrke, updated_at")
-      .eq("team_code", team)
-      .order("player_name");
-    if (error) throw error;
-    renderPlayers(team, data || []);
-    setStatus(`${(data||[]).length} spelare`, "ok");
+    const res = await awDatabases.listDocuments(
+      window.APPWRITE_DATABASE_ID,
+      window.APPWRITE_TABLE_ID,
+      [window.Appwrite.Query.equal("team_code", team), window.Appwrite.Query.limit(100)]
+    );
+    const players = (res.documents || []).slice().sort((a,b) => (a.player_name||"").localeCompare(b.player_name||""));
+    renderPlayers(team, players);
+    setStatus(`${players.length} spelare`, "ok");
     document.getElementById("lastLoad").textContent = "Uppdaterad " + new Date().toLocaleTimeString("sv-SE");
   } catch(e){
     setStatus("Kunde inte ladda: " + (e.message || e), "err");
   }
+}
+
+function safeParse(s, fallback){
+  try { return JSON.parse(s) || fallback; } catch(e){ return fallback; }
 }
 
 function renderPlayers(team, players){
@@ -125,8 +131,8 @@ function renderPlayers(team, players){
   }
   let html = '<table><thead><tr><th>Spelare</th><th>Bingo</th><th>Styrke</th><th>Total</th><th>Uppdaterad</th><th></th></tr></thead><tbody>';
   players.forEach((p, i) => {
-    const bingo = p.bingo || [];
-    const styrke = p.styrke || [];
+    const bingo = safeParse(p.bingo, []);
+    const styrke = safeParse(p.styrke, []);
     const bingoDone = bingo.length;
     const styrkeDone = STYRKE_COUNT ? styrke.filter(s => s && s.done).length : 0;
     const totalPct = Math.round((bingoDone / 30) * 100);
@@ -180,8 +186,7 @@ function toggleDetail(i){
 
 function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
-// Static data mirrors (for coach view rendering)
-const STYRKE_CELLS = [13, 21, 24]; // 0-indexed positions of STYRKE in BINGO grid
+const STYRKE_CELLS = [13, 21, 24];
 const STYRKE_NAMES = [
   "Uppvärmning","Fallskärmshopparen","Klockan","Sidoplankan","Skridskohopp",
   "Enbensböj","Diagonalen","Skidhopp","Dips","Grodhopp",
@@ -194,7 +199,7 @@ document.getElementById("loadBtn").onclick = loadPlayers;
 document.getElementById("refreshBtn").onclick = () => { if (currentTeam) loadPlayers(); };
 document.getElementById("teamCode").addEventListener("keydown", e => { if (e.key === "Enter") loadPlayers(); });
 
-initSupabase();
+initAppwrite();
 if (window.DEFAULT_TEAM_CODE){
   document.getElementById("teamCode").value = window.DEFAULT_TEAM_CODE;
   loadPlayers();

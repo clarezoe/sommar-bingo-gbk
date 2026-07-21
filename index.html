@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sommarbingo U11-U13</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/appwrite@17"></script>
 <script src="./config.js"></script>
 <style>
   :root{
@@ -213,15 +213,18 @@ let bingoState = JSON.parse(localStorage.getItem(KEY_BINGO) || "[]");
 let styrkeState = JSON.parse(localStorage.getItem(KEY_STYRKE) || "[]");
 let currentStep = 0;
 let timerHandle = null;
-let supa = null;
 let syncTimer = null;
 
-// ---------- Supabase ----------
-function initSupabase(){
-  if (window.SUPABASE_URL && window.SUPABASE_URL !== "YOUR_PROJECT_URL" && window.supabase){
+// ---------- Appwrite ----------
+let awDatabases = null;
+function initAppwrite(){
+  if (window.APPWRITE_PROJECT_ID && window.APPWRITE_PROJECT_ID !== "YOUR_PROJECT_ID" && window.Appwrite){
     try {
-      supa = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-    } catch(e){ console.warn("Supabase init failed", e); }
+      const client = new window.Appwrite.Client()
+        .setEndpoint(window.APPWRITE_ENDPOINT)
+        .setProject(window.APPWRITE_PROJECT_ID);
+      awDatabases = new window.Appwrite.Databases(client);
+    } catch(e){ console.warn("Appwrite init failed", e); }
   }
 }
 
@@ -232,18 +235,40 @@ function setSync(status, msg){
   el.textContent = msg || (status === "ok" ? "✓ Sparat" : status === "err" ? "✗ Offline" : "⟳");
 }
 
+function rowId(){
+  // deterministic row id from name+team
+  return (player.name + "_" + player.team).toLowerCase().replace(/[^a-z0-9._-]/g, "_").slice(0, 36);
+}
+
 async function syncPush(){
-  if (!supa || !player) return;
+  if (!awDatabases || !player) return;
   setSync("", "⟳ Sparar...");
   try {
-    const { error } = await supa.from("progress").upsert({
+    const payload = {
       player_name: player.name,
       team_code: player.team,
-      bingo: bingoState,
-      styrke: styrkeState,
+      bingo: JSON.stringify(bingoState),
+      styrke: JSON.stringify(styrkeState),
       updated_at: new Date().toISOString()
-    });
-    if (error) throw error;
+    };
+    try {
+      await awDatabases.updateDocument(
+        window.APPWRITE_DATABASE_ID,
+        window.APPWRITE_TABLE_ID,
+        rowId(),
+        payload
+      );
+    } catch(updateErr){
+      // If not found, create it
+      if (updateErr.code === 404 || (updateErr.message || "").includes("not found")){
+        await awDatabases.createDocument(
+          window.APPWRITE_DATABASE_ID,
+          window.APPWRITE_TABLE_ID,
+          rowId(),
+          payload
+        );
+      } else { throw updateErr; }
+    }
     setSync("ok", "✓ Sparat");
   } catch(e){
     console.warn(e);
@@ -252,23 +277,30 @@ async function syncPush(){
 }
 
 async function syncPull(){
-  if (!supa || !player) return;
+  if (!awDatabases || !player) return;
   try {
-    const { data, error } = await supa.from("progress")
-      .select("bingo, styrke, updated_at")
-      .eq("player_name", player.name)
-      .eq("team_code", player.team)
-      .maybeSingle();
-    if (error) throw error;
-    if (data){
-      bingoState = data.bingo || [];
-      styrkeState = data.styrke || [];
+    const doc = await awDatabases.getDocument(
+      window.APPWRITE_DATABASE_ID,
+      window.APPWRITE_TABLE_ID,
+      rowId()
+    );
+    if (doc){
+      bingoState = safeParse(doc.bingo, []);
+      styrkeState = safeParse(doc.styrke, []);
       localStorage.setItem(KEY_BINGO, JSON.stringify(bingoState));
       localStorage.setItem(KEY_STYRKE, JSON.stringify(styrkeState));
       renderBingo();
       setSync("ok", "✓ Synkad");
     }
-  } catch(e){ console.warn(e); setSync("err", "✗ Kunde inte ladda"); }
+  } catch(e){
+    // 404 = no record yet, that's fine
+    if (e.code !== 404){ console.warn(e); setSync("err", "✗ Kunde inte ladda"); }
+    else { setSync("ok", "Ny spelare"); }
+  }
+}
+
+function safeParse(s, fallback){
+  try { return JSON.parse(s) || fallback; } catch(e){ return fallback; }
 }
 
 // ---------- Login ----------
@@ -533,7 +565,7 @@ document.getElementById("resetBtn").onclick = () => {
 };
 
 // ---------- Init ----------
-initSupabase();
+initAppwrite();
 if (player){
   hideLogin();
   document.getElementById("userName").textContent = player.name;
