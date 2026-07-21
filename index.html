@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sommarbingo U11-U13</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
 <style>
   :root{
     --bg:#0f172a; --panel:#1e293b; --panel2:#334155; --text:#f1f5f9;
@@ -51,6 +53,21 @@
   .cell.styrke{border-color:var(--accent2); box-shadow:inset 0 0 0 1px var(--accent2)}
   .cell.styrke .badge{position:absolute; bottom:4px; right:6px; font-size:9px; background:var(--accent2); color:#1e293b; padding:1px 5px; border-radius:6px; font-weight:700}
 
+  /* Login */
+  .login-overlay{position:fixed; inset:0; background:rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; z-index:100; padding:16px}
+  .login-card{background:var(--panel); border-radius:16px; padding:24px; max-width:380px; width:100%; box-shadow:var(--shadow)}
+  .login-card h2{margin:0 0 4px; text-align:center}
+  .login-card .desc{color:var(--muted); font-size:13px; text-align:center; margin-bottom:18px}
+  .login-card label{display:block; font-size:13px; color:var(--muted); margin:10px 0 4px}
+  .login-card input{width:100%; padding:12px; border-radius:10px; border:2px solid var(--panel2); background:var(--bg); color:var(--text); font-size:16px; font-family:inherit}
+  .login-card input:focus{outline:none; border-color:var(--accent)}
+  .login-card .btn-primary{width:100%; margin-top:16px; padding:14px}
+  .user-bar{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:13px; margin-bottom:8px}
+  .user-bar .name{color:var(--accent); font-weight:700}
+  .sync-status{font-size:11px; color:var(--muted)}
+  .sync-status.ok{color:var(--accent)}
+  .sync-status.err{color:var(--danger)}
+
   /* Styrkegymnastik modal */
   .modal{position:fixed; inset:0; background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center; z-index:50; padding:12px}
   .modal.show{display:flex}
@@ -81,7 +98,6 @@
   .timer-progress > div{height:100%; background:var(--accent); transition:width .3s linear}
 
   .nav-btns{display:flex; gap:8px; justify-content:space-between; margin-top:14px}
-  .nav-btns .spacer{flex:1}
   .complete-banner{display:none; text-align:center; background:var(--accent); color:#052e16; padding:14px; border-radius:12px; font-weight:700; margin:10px 0}
   .complete-banner.show{display:block; animation:pop .5s}
 
@@ -92,11 +108,33 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<!-- Login -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <h2>🎯 Sommarbingo</h2>
+    <div class="desc">Ange ditt namn och lagkod för att spara din framsteg.</div>
+    <label for="loginName">Ditt namn</label>
+    <input id="loginName" type="text" placeholder="t.ex. Ella" autocomplete="off">
+    <label for="loginTeam">Lagkod</label>
+    <input id="loginTeam" type="text" placeholder="t.ex. GBK" autocomplete="off">
+    <button class="btn-primary" id="loginBtn">Börja spela</button>
+    <div class="sync-status" id="loginStatus" style="text-align:center; margin-top:10px"></div>
+  </div>
+</div>
+
+<div class="wrap" id="appWrap" style="display:none">
   <header>
     <h1>🎯 Sommarbingo U11-U13</h1>
     <div class="sub">Vecka 25-33 · Klarar du hela brickan? Då får du ett litet pris!</div>
   </header>
+
+  <div class="user-bar">
+    Spelare: <span class="name" id="userName"></span> ·
+    Lag: <span class="name" id="userTeam"></span> ·
+    <span class="sync-status" id="syncStatus">⟳</span>
+    <button class="btn-secondary" id="logoutBtn" style="padding:4px 10px; font-size:12px">Byt spelare</button>
+  </div>
 
   <div class="progress-wrap"><div class="progress-bar" id="progBar"></div></div>
   <div class="progress-text" id="progText">0 / 30 klara</div>
@@ -115,17 +153,13 @@
   <div class="modal-card">
     <h2>💪 Styrkegymnastikprogram</h2>
     <div class="desc">Tävlings spelare i GBK. Klocka + hopprep. Hållningen! Spänn magen!</div>
-
     <div class="step-list" id="stepList"></div>
-
     <div class="active-step" id="activeStep">
       <h3 id="asTitle"></h3>
       <div class="hint" id="asHint"></div>
       <div id="asBody"></div>
     </div>
-
     <div class="complete-banner" id="styrkeDone">🎉 Hela styrkegymnastikprogrammet klart! Bingo-rutorna markerade.</div>
-
     <div class="nav-btns">
       <button class="btn-secondary" id="prevBtn">← Föregående</button>
       <button class="btn-warn" id="skipBtn">Hoppa över</button>
@@ -148,7 +182,6 @@ const BINGO = [
   ["STYRKE","Jogga/spring minst 20 min utan att stanna","Backträning. 10 ggr i kort backe (10-15s löpning)","Spring i trappor 5 ggr, minst 10 trappsteg","Hoppa 2 x 100 hopprep (backa 5 om du missar)","Spring i trappor 5 ggr, minst 10 trappsteg"],
 ];
 
-// Styrkegymnastikprogram steps. type: 'reps' | 'timer' | 'info'
 const STYRKE = [
   {t:"Uppvärmning", type:"info", hint:"Vanlig badmintonuppvärmning ca 5 min + minst 200 hopp med hopprep. Därefter är du redo."},
   {t:"Fallskärmshopparen", type:"reps", target:20, hint:"Upphopp på två ben men landa bara på ett ben. 10 st landning vänster + 10 st landning höger."},
@@ -172,19 +205,120 @@ const STYRKE = [
 ];
 
 // ---------- State ----------
-const KEY_BINGO = "sommarbingo.bingo.v1";
-const KEY_STYRKE = "sommarbingo.styrke.v1";
+const KEY_PLAYER = "sommarbingo.player.v2";
+const KEY_BINGO = "sommarbingo.bingo.v2";
+const KEY_STYRKE = "sommarbingo.styrke.v2";
+let player = JSON.parse(localStorage.getItem(KEY_PLAYER) || "null");
 let bingoState = JSON.parse(localStorage.getItem(KEY_BINGO) || "[]");
 let styrkeState = JSON.parse(localStorage.getItem(KEY_STYRKE) || "[]");
 let currentStep = 0;
 let timerHandle = null;
+let supa = null;
+let syncTimer = null;
+
+// ---------- Supabase ----------
+function initSupabase(){
+  if (window.SUPABASE_URL && window.SUPABASE_URL !== "YOUR_PROJECT_URL" && window.supabase){
+    try {
+      supa = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    } catch(e){ console.warn("Supabase init failed", e); }
+  }
+}
+
+function setSync(status, msg){
+  const el = document.getElementById("syncStatus");
+  if (!el) return;
+  el.className = "sync-status " + (status || "");
+  el.textContent = msg || (status === "ok" ? "✓ Sparat" : status === "err" ? "✗ Offline" : "⟳");
+}
+
+async function syncPush(){
+  if (!supa || !player) return;
+  setSync("", "⟳ Sparar...");
+  try {
+    const { error } = await supa.from("progress").upsert({
+      player_name: player.name,
+      team_code: player.team,
+      bingo: bingoState,
+      styrke: styrkeState,
+      updated_at: new Date().toISOString()
+    });
+    if (error) throw error;
+    setSync("ok", "✓ Sparat");
+  } catch(e){
+    console.warn(e);
+    setSync("err", "✗ Sparar lokalt");
+  }
+}
+
+async function syncPull(){
+  if (!supa || !player) return;
+  try {
+    const { data, error } = await supa.from("progress")
+      .select("bingo, styrke, updated_at")
+      .eq("player_name", player.name)
+      .eq("team_code", player.team)
+      .maybeSingle();
+    if (error) throw error;
+    if (data){
+      bingoState = data.bingo || [];
+      styrkeState = data.styrke || [];
+      localStorage.setItem(KEY_BINGO, JSON.stringify(bingoState));
+      localStorage.setItem(KEY_STYRKE, JSON.stringify(styrkeState));
+      renderBingo();
+      setSync("ok", "✓ Synkad");
+    }
+  } catch(e){ console.warn(e); setSync("err", "✗ Kunde inte ladda"); }
+}
+
+// ---------- Login ----------
+function showLogin(){
+  document.getElementById("loginOverlay").style.display = "flex";
+  document.getElementById("appWrap").style.display = "none";
+  if (window.DEFAULT_TEAM_CODE){
+    document.getElementById("loginTeam").value = window.DEFAULT_TEAM_CODE;
+  }
+}
+function hideLogin(){
+  document.getElementById("loginOverlay").style.display = "none";
+  document.getElementById("appWrap").style.display = "block";
+}
+
+function doLogin(){
+  const name = document.getElementById("loginName").value.trim();
+  const team = document.getElementById("loginTeam").value.trim();
+  const status = document.getElementById("loginStatus");
+  if (!name){ status.textContent = "Ange ditt namn."; return; }
+  if (!team){ status.textContent = "Ange lagkod."; return; }
+  player = { name, team };
+  localStorage.setItem(KEY_PLAYER, JSON.stringify(player));
+  hideLogin();
+  document.getElementById("userName").textContent = name;
+  document.getElementById("userTeam").textContent = team;
+  // pull remote first, then render
+  renderBingo();
+  syncPull();
+}
+
+function doLogout(){
+  if (!confirm("Byta spelare? Lokal framsteg sparas inte om du rensar.")) return;
+  localStorage.removeItem(KEY_PLAYER);
+  player = null;
+  showLogin();
+}
 
 // ---------- Bingo ----------
-function saveBingo(){ localStorage.setItem(KEY_BINGO, JSON.stringify(bingoState)); }
-function saveStyrke(){ localStorage.setItem(KEY_STYRKE, JSON.stringify(styrkeState)); }
+function saveBingo(){ localStorage.setItem(KEY_BINGO, JSON.stringify(bingoState)); scheduleSync(); }
+function saveStyrke(){ localStorage.setItem(KEY_STYRKE, JSON.stringify(styrkeState)); scheduleSync(); }
+
+function scheduleSync(){
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncPush, 800); // debounce
+}
 
 function renderBingo(){
   const grid = document.getElementById("bingo");
+  if (!grid) return;
   grid.innerHTML = "";
   BINGO.forEach((row, r) => row.forEach((cell, c) => {
     const idx = r*6 + c;
@@ -195,10 +329,7 @@ function renderBingo(){
     el.className = "cell" + (done ? " done" : "") + (isStyrke ? " styrke" : "");
     el.innerHTML = `<span class="num">${idx+1}</span><span class="check">✓</span>${isStyrke?'<span class="badge">💪</span>':''}<div class="txt">${label}</div>`;
     el.onclick = () => {
-      if (isStyrke){
-        openStyrke();
-        return;
-      }
+      if (isStyrke){ openStyrke(); return; }
       toggleBingo(idx);
     };
     grid.appendChild(el);
@@ -308,11 +439,7 @@ function updateRep(i, delta){
   st.done = st.count >= s.target;
   styrkeState[i] = st;
   saveStyrke();
-  if (st.done){
-    markStyrkeDone(i, true);
-  } else {
-    showStep(i);
-  }
+  if (st.done){ markStyrkeDone(i, true); } else { showStep(i); }
 }
 
 function startTimer(i){
@@ -373,7 +500,6 @@ function checkAllStyrkeDone(){
   const allDone = STYRKE.every((_, i) => (styrkeState[i] || {}).done);
   document.getElementById("styrkeDone").classList.toggle("show", allDone);
   if (allDone){
-    // auto-mark the three STYRKE bingo cells
     BINGO.forEach((row, r) => row.forEach((cell, c) => {
       if (cell === "STYRKE") setBingoDone(r*6 + c, true);
     }));
@@ -388,34 +514,35 @@ function fmtTime(sec){
 }
 
 // ---------- Nav ----------
-document.getElementById("prevBtn").onclick = () => {
-  stopTimer();
-  if (currentStep > 0){ currentStep--; showStep(currentStep); }
-};
-document.getElementById("nextBtn").onclick = () => {
-  stopTimer();
-  if (currentStep < STYRKE.length - 1){ currentStep++; showStep(currentStep); }
-};
-document.getElementById("skipBtn").onclick = () => {
-  stopTimer();
-  if (currentStep < STYRKE.length - 1){ currentStep++; showStep(currentStep); }
-};
+document.getElementById("prevBtn").onclick = () => { stopTimer(); if (currentStep > 0){ currentStep--; showStep(currentStep); } };
+document.getElementById("nextBtn").onclick = () => { stopTimer(); if (currentStep < STYRKE.length - 1){ currentStep++; showStep(currentStep); } };
+document.getElementById("skipBtn").onclick = () => { stopTimer(); if (currentStep < STYRKE.length - 1){ currentStep++; showStep(currentStep); } };
 document.getElementById("openStyrke").onclick = openStyrke;
 document.getElementById("closeStyrke").onclick = closeStyrke;
-document.getElementById("styrkeModal").onclick = (e) => {
-  if (e.target.id === "styrkeModal") closeStyrke();
-};
+document.getElementById("styrkeModal").onclick = (e) => { if (e.target.id === "styrkeModal") closeStyrke(); };
+document.getElementById("loginBtn").onclick = doLogin;
+document.getElementById("logoutBtn").onclick = doLogout;
 document.getElementById("resetBtn").onclick = () => {
   if (confirm("Återställ all framsteg? Detta kan inte ångras.")){
     bingoState = []; styrkeState = []; currentStep = 0;
     saveBingo(); saveStyrke();
     renderBingo();
     document.getElementById("styrkeDone").classList.remove("show");
+    syncPush();
   }
 };
 
 // ---------- Init ----------
-renderBingo();
+initSupabase();
+if (player){
+  hideLogin();
+  document.getElementById("userName").textContent = player.name;
+  document.getElementById("userTeam").textContent = player.team;
+  renderBingo();
+  syncPull();
+} else {
+  showLogin();
+}
 </script>
 </body>
 </html>
