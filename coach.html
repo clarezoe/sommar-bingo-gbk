@@ -207,14 +207,15 @@ function renderPlayers(team, players){
     const bingo = safeParse(p.bingo, []);
     const styrke = safeParse(p.styrke, []);
     const bingoDone = bingo.length;
-    const styrkeStepDone = STYRKE_COUNT ? styrke.filter(s => s && s.done).length : 0;
+    // Styrke completions = how many of the 3 STYRKE bingo cells are marked
+    const styrkeCompletions = STYRKE_CELLS.filter(idx => bingo.includes(idx)).length;
     const totalPct = Math.round((bingoDone / 30) * 100);
-    const styrkePct = Math.round((styrkeStepDone / STYRKE_COUNT) * 100);
+    const styrkePct = Math.round((styrkeCompletions / 3) * 100);
     const updated = p.updated_at ? new Date(p.updated_at).toLocaleString("sv-SE", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"}) : "—";
     html += `<tr>
       <td><strong>${escapeHtml(p.player_name)}</strong></td>
       <td><span class="num">${bingoDone}/30</span> <span class="pct-bar"><div style="width:${totalPct}%"></div></span></td>
-      <td><span class="num">${styrkeStepDone}/${STYRKE_COUNT}</span> <span class="pct-bar styrke"><div style="width:${styrkePct}%"></div></span></td>
+      <td><span class="num">${styrkeCompletions}/3</span> <span class="pct-bar styrke"><div style="width:${styrkePct}%"></div></span></td>
       <td><span class="num">${bingoDone}/30</span></td>
       <td class="updated">${updated}</td>
       <td><button class="btn-secondary" style="padding:6px 10px; font-size:12px" onclick="toggleDetail(${i})">${t("detailBtn")}</button></td>
