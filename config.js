@@ -6,3 +6,6 @@ window.APPWRITE_PROJECT_ID = "6a5fbff9003d75f889af";
 window.APPWRITE_DATABASE_ID = "6a5fc1470035f5150049";
 window.APPWRITE_TABLE_ID = "progress";
 window.DEFAULT_TEAM_CODE = "GBK";
+// Coach page access password (GDPR: protects player names from public access).
+// Change this and share only with coaches.
+window.COACH_PASSWORD = "GBK2026";

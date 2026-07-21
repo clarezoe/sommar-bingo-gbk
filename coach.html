@@ -86,7 +86,20 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div class="login-overlay" id="coachLogin" style="position:fixed;inset:0;background:linear-gradient(160deg,var(--bg),#1e293b);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px">
+  <div class="login-card" style="background:var(--surface);border-radius:var(--radius-lg);padding:28px 24px;max-width:360px;width:100%;box-shadow:var(--shadow)">
+    <div style="text-align:center;font-size:48px;margin-bottom:8px">🔒</div>
+    <h2 style="margin:0 0 4px;text-align:center;font-size:22px;font-weight:800" id="coachLoginTitle"></h2>
+    <div style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:20px;line-height:1.5" id="coachLoginDesc"></div>
+    <label style="display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;font-weight:700;text-transform:uppercase;letter-spacing:.5px" id="lblCoachPw"></label>
+    <input id="coachPw" type="password" placeholder="••••••" autocomplete="off" style="width:100%;padding:14px 16px;border-radius:var(--radius-sm);border:2px solid var(--surface2);background:var(--bg);color:var(--text);font-size:17px;font-family:inherit">
+    <button class="btn-primary" id="coachPwBtn" style="width:100%;margin-top:20px;padding:16px;font-size:16px;font-weight:800;background:var(--green);color:#052e16;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit"></button>
+    <div class="status" id="coachPwStatus" style="font-size:12px;color:var(--red);text-align:center;margin-top:12px;min-height:16px"></div>
+  </div>
+</div>
+
+<div class="wrap" id="appWrap" style="display:none">
   <div class="header">
     <div>
       <h1>📋 <span id="hTitle"></span></h1>
@@ -131,6 +144,8 @@ const I18N = {
     loadFail: m => "Kunde inte ladda: " + m, playersCount: n => `${n} spelare`,
     updatedPrefix: "Uppdaterad ", bingoLabel: "Bingo-bricka (grön=klar, gul=styrke):",
     styrkeLabel: "Styrkegymnastik:", detailTap: "Tryck för att visa/dölja detaljer",
+    coachLoginTitle: "Coach-inloggning", coachLoginDesc: "Lösenord krävs för att se spelarnas namn (GDPR).",
+    lblCoachPw: "Lösenord", coachPwBtn: "Logga in", coachPwWrong: "Fel lösenord.",
   },
   en: {
     hTitle: "Coach", hSub: "Summer Bingo U11-U13 · see all players' progress",
@@ -140,6 +155,8 @@ const I18N = {
     loadFail: m => "Could not load: " + m, playersCount: n => `${n} players`,
     updatedPrefix: "Updated ", bingoLabel: "Bingo board (green=done, yellow=strength):",
     styrkeLabel: "Strength program:", detailTap: "Tap to show/hide details",
+    coachLoginTitle: "Coach login", coachLoginDesc: "Password required to view player names (GDPR).",
+    lblCoachPw: "Password", coachPwBtn: "Log in", coachPwWrong: "Wrong password.",
   }
 };
 function t(key){ const v = I18N[lang][key]; return typeof v === "function" ? v : v; }
@@ -160,7 +177,40 @@ function applyTexts(){
   document.getElementById("lblTeam").textContent = t("lblTeam");
   document.getElementById("loadBtn").textContent = t("loadBtn");
   document.getElementById("lblPlayersIn").textContent = t("lblPlayersIn");
+  document.getElementById("coachLoginTitle").textContent = t("coachLoginTitle");
+  document.getElementById("coachLoginDesc").textContent = t("coachLoginDesc");
+  document.getElementById("lblCoachPw").textContent = t("lblCoachPw");
+  document.getElementById("coachPwBtn").textContent = t("coachPwBtn");
 }
+
+const COACH_PW_KEY = "sommarbingo.coachAuth";
+function checkCoachAuth(){
+  if (sessionStorage.getItem(COACH_PW_KEY) === "1"){
+    document.getElementById("coachLogin").style.display = "none";
+    document.getElementById("appWrap").style.display = "block";
+    return true;
+  }
+  document.getElementById("coachLogin").style.display = "flex";
+  document.getElementById("appWrap").style.display = "none";
+  return false;
+}
+function tryCoachLogin(){
+  const pw = document.getElementById("coachPw").value;
+  const expected = window.COACH_PASSWORD || "";
+  if (pw && pw === expected){
+    sessionStorage.setItem(COACH_PW_KEY, "1");
+    document.getElementById("coachPwStatus").textContent = "";
+    checkCoachAuth();
+    if (window.DEFAULT_TEAM_CODE){
+      document.getElementById("teamCode").value = window.DEFAULT_TEAM_CODE;
+      loadPlayers();
+    }
+  } else {
+    document.getElementById("coachPwStatus").textContent = t("coachPwWrong");
+  }
+}
+document.getElementById("coachPwBtn").onclick = tryCoachLogin;
+document.getElementById("coachPw").addEventListener("keydown", e => { if (e.key === "Enter") tryCoachLogin(); });
 
 function initAppwrite(){
   if (window.APPWRITE_PROJECT_ID && window.Appwrite){
@@ -275,9 +325,11 @@ document.getElementById("teamCode").addEventListener("keydown", e => { if (e.key
 
 initAppwrite();
 setLang(lang);
-if (window.DEFAULT_TEAM_CODE){
-  document.getElementById("teamCode").value = window.DEFAULT_TEAM_CODE;
-  loadPlayers();
+if (checkCoachAuth()){
+  if (window.DEFAULT_TEAM_CODE){
+    document.getElementById("teamCode").value = window.DEFAULT_TEAM_CODE;
+    loadPlayers();
+  }
 }
 if ("serviceWorker" in navigator){
   window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
