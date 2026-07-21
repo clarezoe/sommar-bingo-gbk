@@ -2,109 +2,181 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sommarbingo">
+<meta name="theme-color" content="#22c55e">
+<meta name="description" content="Sommarens träningsbingo för GBK U11-U13">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" type="image/png" href="./icon-192.png">
 <title>Sommarbingo U11-U13</title>
 <script src="https://cdn.jsdelivr.net/npm/appwrite@17"></script>
 <script src="./config.js"></script>
 <style>
   :root{
-    --bg:#0f172a; --panel:#1e293b; --panel2:#334155; --text:#f1f5f9;
-    --muted:#94a3b8; --accent:#22c55e; --accent2:#f59e0b; --danger:#ef4444;
-    --done:#22c55e; --shadow:0 4px 14px rgba(0,0,0,.35);
+    --bg:#0b1120; --surface:#1e293b; --surface2:#334155; --surface3:#475569;
+    --text:#f8fafc; --muted:#94a3b8; --dim:#64748b;
+    --green:#22c55e; --green-d:#16a34a; --green-l:#4ade80;
+    --amber:#f59e0b; --amber-d:#d97706; --amber-l:#fbbf24;
+    --red:#ef4444; --blue:#3b82f6;
+    --radius:16px; --radius-sm:10px; --radius-lg:24px;
+    --shadow:0 8px 32px rgba(0,0,0,.4); --shadow-sm:0 2px 8px rgba(0,0,0,.2);
+    --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
   }
-  *{box-sizing:border-box}
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; padding:0; overscroll-behavior-y:none}
   body{
-    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:linear-gradient(160deg,#0f172a,#1e293b); color:var(--text); min-height:100vh;
-    -webkit-tap-highlight-color:transparent;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); min-height:100vh; min-height:100dvh;
+    font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:1100px; margin:0 auto; padding:16px}
-  header{text-align:center; padding:8px 0 16px}
-  header h1{margin:0 0 4px; font-size:clamp(20px,4vw,30px)}
-  header .sub{color:var(--muted); font-size:14px}
-  .lang-toggle{display:inline-flex; gap:0; margin:8px 0 0; border:1px solid var(--panel2); border-radius:8px; overflow:hidden}
-  .lang-toggle button{background:var(--panel); color:var(--muted); border:none; padding:6px 14px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit}
-  .lang-toggle button.active{background:var(--accent); color:#052e16}
-  .progress-wrap{background:var(--panel); border-radius:999px; height:14px; overflow:hidden; margin:14px 0 4px; box-shadow:var(--shadow)}
-  .progress-bar{height:100%; background:linear-gradient(90deg,var(--accent),#16a34a); width:0; transition:width .4s ease}
-  .progress-text{text-align:center; color:var(--muted); font-size:13px; margin-bottom:14px}
-  .prize{display:none; text-align:center; background:linear-gradient(90deg,#f59e0b,#fbbf24); color:#1e293b; font-weight:700; padding:12px; border-radius:12px; margin:10px 0; box-shadow:var(--shadow)}
-  .prize.show{display:block; animation:pop .5s}
-  @keyframes pop{0%{transform:scale(.8)}100%{transform:scale(1)}}
+  .wrap{max-width:560px; margin:0 auto; padding:calc(16px + var(--safe-top)) 16px calc(80px + var(--safe-bottom))}
 
-  .toolbar{display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:10px 0 16px}
-  button{font-family:inherit; cursor:pointer; border:none; border-radius:10px; padding:10px 16px; font-size:14px; font-weight:600; transition:transform .1s, background .2s}
-  button:active{transform:scale(.96)}
-  .btn-primary{background:var(--accent); color:#052e16}
-  .btn-secondary{background:var(--panel2); color:var(--text)}
-  .btn-danger{background:var(--danger); color:#fff}
-  .btn-warn{background:var(--accent2); color:#1e293b}
+  /* Header */
+  .header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px}
+  .header .title-block{flex:1; min-width:0}
+  .header h1{margin:0; font-size:22px; font-weight:800; letter-spacing:-.3px; display:flex; align-items:center; gap:8px}
+  .header h1 .emoji{font-size:24px}
+  .header .sub{color:var(--muted); font-size:13px; margin-top:2px; font-weight:500}
+  .lang-toggle{display:inline-flex; background:var(--surface); border-radius:999px; padding:3px; gap:2px; flex-shrink:0}
+  .lang-toggle button{background:transparent; color:var(--muted); border:none; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; border-radius:999px; font-family:inherit; transition:all .2s}
+  .lang-toggle button.active{background:var(--green); color:#052e16}
 
-  .bingo{display:grid; grid-template-columns:repeat(6,1fr); gap:6px}
+  /* Progress hero card */
+  .hero{background:linear-gradient(135deg,#1e293b,#334155); border-radius:var(--radius-lg); padding:20px; margin-bottom:16px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .hero::before{content:""; position:absolute; top:-50%; right:-30%; width:200px; height:200px; background:radial-gradient(circle,rgba(34,197,94,.15),transparent 70%); pointer-events:none}
+  .hero .pct-row{display:flex; align-items:baseline; gap:8px; margin-bottom:12px}
+  .hero .pct{font-size:36px; font-weight:800; color:var(--green-l); font-variant-numeric:tabular-nums; line-height:1}
+  .hero .pct-of{color:var(--muted); font-size:15px; font-weight:600}
+  .hero .pct-label{color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; margin-left:auto}
+  .hero .bar{height:10px; background:rgba(0,0,0,.3); border-radius:999px; overflow:hidden; margin-bottom:10px}
+  .hero .bar > div{height:100%; background:linear-gradient(90deg,var(--green),var(--green-l)); border-radius:999px; transition:width .5s cubic-bezier(.4,0,.2,1); box-shadow:0 0 12px rgba(34,197,94,.5)}
+  .hero .meta{display:flex; justify-content:space-between; font-size:12px; color:var(--muted); font-weight:600}
+  .hero .meta .styrke-count{color:var(--amber-l)}
+
+  /* Prize banner */
+  .prize{display:none; background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#1e1308; border-radius:var(--radius); padding:14px 16px; margin-bottom:16px; font-weight:700; font-size:14px; text-align:center; box-shadow:0 4px 20px rgba(245,158,11,.4)}
+  .prize.show{display:block; animation:slideUp .4s}
+  @keyframes slideUp{from{opacity:0; transform:translateY(10px)}to{opacity:1; transform:translateY(0)}}
+
+  /* User bar */
+  .user-bar{display:flex; align-items:center; gap:10px; background:var(--surface); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:13px}
+  .user-bar .avatar{width:32px; height:32px; border-radius:50%; background:var(--green); color:#052e16; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; flex-shrink:0}
+  .user-bar .info{flex:1; min-width:0}
+  .user-bar .info .name{font-weight:700; color:var(--text)}
+  .user-bar .info .team{color:var(--muted); font-size:12px}
+  .user-bar .sync{font-size:11px; color:var(--muted); font-weight:600; flex-shrink:0}
+  .user-bar .sync.ok{color:var(--green)}
+  .user-bar .sync.err{color:var(--red)}
+  .user-bar .logout{background:transparent; border:none; color:var(--muted); font-size:18px; padding:4px 8px; cursor:pointer; font-family:inherit}
+
+  /* Styrke CTA button */
+  .styrke-cta{display:flex; align-items:center; gap:14px; width:100%; background:linear-gradient(135deg,#78350f,#92400e); border:none; border-radius:var(--radius); padding:16px 18px; margin-bottom:16px; cursor:pointer; font-family:inherit; text-align:left; box-shadow:0 4px 16px rgba(245,158,11,.25); transition:transform .1s}
+  .styrke-cta:active{transform:scale(.98)}
+  .styrke-cta .icon{font-size:28px; flex-shrink:0}
+  .styrke-cta .text{flex:1; color:#fef3c7}
+  .styrke-cta .text .t1{font-weight:800; font-size:15px; display:block}
+  .styrke-cta .text .t2{font-size:12px; opacity:.8; display:block; margin-top:2px}
+  .styrke-cta .arrow{color:#fbbf24; font-size:20px; flex-shrink:0}
+
+  /* Bingo grid */
+  .bingo{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
   .cell{
-    background:var(--panel); border:2px solid transparent; border-radius:10px;
-    padding:10px 8px; font-size:12px; line-height:1.35; min-height:96px;
-    display:flex; flex-direction:column; justify-content:space-between; cursor:pointer;
-    transition:all .15s; user-select:none; position:relative;
+    background:var(--surface); border:2px solid transparent; border-radius:var(--radius-sm);
+    padding:12px 10px; font-size:12px; line-height:1.3; min-height:110px;
+    display:flex; flex-direction:column; cursor:pointer; transition:all .15s;
+    user-select:none; position:relative; overflow:hidden;
   }
-  .cell:hover{border-color:var(--accent)}
-  .cell.done{background:linear-gradient(160deg,#14532d,#22c55e22); border-color:var(--done); color:#bbf7d0}
-  .cell.done .check{opacity:1}
-  .cell .num{position:absolute; top:4px; left:6px; font-size:10px; color:var(--muted); font-weight:700}
-  .cell .txt{flex:1; padding-top:10px}
-  .cell .check{position:absolute; top:4px; right:6px; font-size:16px; opacity:0; transition:opacity .2s}
-  .cell.styrke{border-color:var(--accent2); box-shadow:inset 0 0 0 1px var(--accent2)}
-  .cell.styrke .badge{position:absolute; bottom:4px; right:6px; font-size:9px; background:var(--accent2); color:#1e293b; padding:1px 5px; border-radius:6px; font-weight:700}
+  .cell:active{transform:scale(.96)}
+  .cell.done{background:linear-gradient(160deg,#14532d,#166534); border-color:var(--green); color:#dcfce7}
+  .cell.done .check{opacity:1; transform:scale(1)}
+  .cell .num{position:absolute; top:6px; left:8px; font-size:10px; color:var(--dim); font-weight:800; background:rgba(0,0,0,.3); padding:1px 6px; border-radius:999px}
+  .cell.done .num{background:rgba(255,255,255,.15); color:#bbf7d0}
+  .cell .txt{flex:1; padding-top:14px; font-weight:600}
+  .cell .check{position:absolute; top:6px; right:8px; width:20px; height:20px; background:var(--green); color:#052e16; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; opacity:0; transform:scale(0); transition:all .25s cubic-bezier(.34,1.56,.64,1)}
+  .cell.styrke{border-color:var(--amber); background:linear-gradient(160deg,#422006,#78350f)}
+  .cell.styrke .txt{color:#fef3c7}
+  .cell.styrke .badge{position:absolute; bottom:6px; right:8px; font-size:16px}
+  .cell.styrke.done{background:linear-gradient(160deg,#14532d,#166534); border-color:var(--green)}
 
-  .login-overlay{position:fixed; inset:0; background:rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; z-index:100; padding:16px}
-  .login-card{background:var(--panel); border-radius:16px; padding:24px; max-width:380px; width:100%; box-shadow:var(--shadow)}
-  .login-card h2{margin:0 0 4px; text-align:center}
-  .login-card .desc{color:var(--muted); font-size:13px; text-align:center; margin-bottom:18px}
-  .login-card label{display:block; font-size:13px; color:var(--muted); margin:10px 0 4px}
-  .login-card input{width:100%; padding:12px; border-radius:10px; border:2px solid var(--panel2); background:var(--bg); color:var(--text); font-size:16px; font-family:inherit}
-  .login-card input:focus{outline:none; border-color:var(--accent)}
-  .login-card .btn-primary{width:100%; margin-top:16px; padding:14px}
-  .user-bar{display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; color:var(--muted); font-size:13px; margin-bottom:8px}
-  .user-bar .name{color:var(--accent); font-weight:700}
-  .sync-status{font-size:11px; color:var(--muted)}
-  .sync-status.ok{color:var(--accent)}
-  .sync-status.err{color:var(--danger)}
+  /* Login */
+  .login-overlay{position:fixed; inset:0; background:linear-gradient(160deg,var(--bg),#1e293b); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px}
+  .login-card{background:var(--surface); border-radius:var(--radius-lg); padding:28px 24px; max-width:360px; width:100%; box-shadow:var(--shadow)}
+  .login-card .logo{text-align:center; font-size:48px; margin-bottom:8px}
+  .login-card h2{margin:0 0 4px; text-align:center; font-size:22px; font-weight:800}
+  .login-card .desc{color:var(--muted); font-size:13px; text-align:center; margin-bottom:20px; line-height:1.5}
+  .login-card label{display:block; font-size:12px; color:var(--muted); margin:14px 0 6px; font-weight:700; text-transform:uppercase; letter-spacing:.5px}
+  .login-card input{width:100%; padding:14px 16px; border-radius:var(--radius-sm); border:2px solid var(--surface2); background:var(--bg); color:var(--text); font-size:17px; font-family:inherit; transition:border-color .2s}
+  .login-card input:focus{outline:none; border-color:var(--green)}
+  .login-card .btn-primary{width:100%; margin-top:20px; padding:16px; font-size:16px; font-weight:800; background:var(--green); color:#052e16; border:none; border-radius:var(--radius-sm); cursor:pointer; font-family:inherit; transition:transform .1s}
+  .login-card .btn-primary:active{transform:scale(.98)}
+  .login-card .status{font-size:12px; color:var(--red); text-align:center; margin-top:12px; min-height:16px}
+  .login-card .lang-toggle{display:flex; justify-content:center; margin-bottom:16px}
 
-  .modal{position:fixed; inset:0; background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center; z-index:50; padding:12px}
-  .modal.show{display:flex}
-  .modal-card{background:var(--panel); border-radius:16px; max-width:560px; width:100%; max-height:92vh; overflow:auto; box-shadow:var(--shadow); padding:20px}
-  .modal-card h2{margin:0 0 4px; font-size:20px; color:var(--accent2)}
-  .modal-card .desc{color:var(--muted); font-size:13px; margin-bottom:14px}
-  .step-list{display:flex; flex-direction:column; gap:6px; margin-bottom:14px}
-  .step-item{display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--panel2); border-radius:10px; cursor:pointer; border:2px solid transparent}
-  .step-item.active{border-color:var(--accent2); background:#3f2a05}
-  .step-item.done{opacity:.6; text-decoration:line-through}
-  .step-item .idx{font-weight:700; color:var(--muted); min-width:24px}
-  .step-item .label{flex:1; font-size:14px}
-  .step-item .stat{font-size:12px; color:var(--accent); font-weight:700}
+  /* Modal */
+  .modal{position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(4px); display:none; align-items:flex-end; justify-content:center; z-index:50; padding:0}
+  .modal.show{display:flex; animation:fadeIn .2s}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal-card{background:var(--bg); border-radius:var(--radius-lg) var(--radius-lg) 0 0; max-width:560px; width:100%; max-height:92vh; overflow-y:auto; padding:20px 16px calc(24px + var(--safe-bottom)); animation:slideUp .3s cubic-bezier(.4,0,.2,1)}
+  @keyframes slideUpModal{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .modal-card{animation:slideUpModal .3s cubic-bezier(.4,0,.2,1)}
+  .modal-card .grip{width:40px; height:4px; background:var(--surface2); border-radius:999px; margin:0 auto 16px}
+  .modal-card h2{margin:0 0 4px; font-size:20px; font-weight:800; color:var(--amber-l); display:flex; align-items:center; gap:8px}
+  .modal-card .desc{color:var(--muted); font-size:13px; margin-bottom:16px; line-height:1.5}
 
-  .active-step{background:var(--panel2); border-radius:12px; padding:16px; margin-bottom:14px}
-  .active-step h3{margin:0 0 6px; font-size:18px}
-  .active-step .hint{color:var(--muted); font-size:13px; margin-bottom:14px}
-  .counter-display{font-size:48px; font-weight:800; text-align:center; color:var(--accent); margin:8px 0}
-  .counter-display .target{color:var(--muted); font-size:20px; font-weight:500}
-  .counter-btns{display:flex; gap:8px; justify-content:center; margin:10px 0}
-  .counter-btns button{width:56px; height:56px; font-size:24px; border-radius:50%}
-  .tap-area{background:var(--panel); border:2px dashed var(--accent); border-radius:12px; padding:20px; text-align:center; cursor:pointer; margin:10px 0; font-size:14px; color:var(--muted)}
-  .tap-area:active{background:var(--accent); color:#052e16}
+  /* Step list */
+  .step-list{display:flex; flex-direction:column; gap:6px; margin-bottom:16px; max-height:240px; overflow-y:auto}
+  .step-item{display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--surface); border-radius:var(--radius-sm); cursor:pointer; border:2px solid transparent; transition:all .15s}
+  .step-item:active{transform:scale(.98)}
+  .step-item.active{border-color:var(--amber); background:linear-gradient(135deg,#422006,#78350f)}
+  .step-item.done{opacity:.5}
+  .step-item.done .label{text-decoration:line-through}
+  .step-item .idx{width:28px; height:28px; border-radius:50%; background:var(--surface2); color:var(--muted); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex-shrink:0}
+  .step-item.active .idx{background:var(--amber); color:#1e1308}
+  .step-item.done .idx{background:var(--green); color:#052e16}
+  .step-item .label{flex:1; font-size:14px; font-weight:600}
+  .step-item .stat{font-size:12px; color:var(--green-l); font-weight:700; flex-shrink:0}
 
-  .timer-display{font-size:56px; font-weight:800; text-align:center; font-variant-numeric:tabular-nums; margin:8px 0}
-  .timer-display.warn{color:var(--danger)}
-  .timer-progress{height:8px; background:var(--panel); border-radius:999px; overflow:hidden; margin:6px 0 14px}
-  .timer-progress > div{height:100%; background:var(--accent); transition:width .3s linear}
+  /* Active step */
+  .active-step{background:var(--surface); border-radius:var(--radius); padding:20px 16px; margin-bottom:16px; text-align:center}
+  .active-step h3{margin:0 0 6px; font-size:18px; font-weight:800}
+  .active-step .hint{color:var(--muted); font-size:13px; margin-bottom:18px; line-height:1.5}
+  .counter-display{font-size:64px; font-weight:900; color:var(--green-l); margin:12px 0; font-variant-numeric:tabular-nums; line-height:1}
+  .counter-display .target{color:var(--muted); font-size:24px; font-weight:600}
+  .counter-btns{display:flex; gap:12px; justify-content:center; margin:16px 0}
+  .counter-btns button{width:64px; height:64px; font-size:28px; border-radius:50%; border:none; cursor:pointer; font-family:inherit; font-weight:800; transition:transform .1s}
+  .counter-btns button:active{transform:scale(.9)}
+  .counter-btns .minus{background:var(--surface2); color:var(--text)}
+  .counter-btns .plus{background:var(--green); color:#052e16}
+  .tap-area{background:linear-gradient(135deg,var(--surface2),var(--surface3)); border:2px dashed var(--green); border-radius:var(--radius); padding:28px 20px; text-align:center; cursor:pointer; margin:12px 0; font-size:14px; color:var(--muted); font-weight:600; transition:all .1s}
+  .tap-area:active{background:var(--green); color:#052e16; transform:scale(.98); border-style:solid}
 
-  .nav-btns{display:flex; gap:8px; justify-content:space-between; margin-top:14px}
-  .complete-banner{display:none; text-align:center; background:var(--accent); color:#052e16; padding:14px; border-radius:12px; font-weight:700; margin:10px 0}
-  .complete-banner.show{display:block; animation:pop .5s}
+  .timer-display{font-size:72px; font-weight:900; text-align:center; font-variant-numeric:tabular-nums; margin:12px 0; color:var(--green-l); line-height:1}
+  .timer-display.warn{color:var(--red); animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .timer-progress{height:8px; background:var(--surface2); border-radius:999px; overflow:hidden; margin:8px 0 18px}
+  .timer-progress > div{height:100%; background:linear-gradient(90deg,var(--green),var(--green-l)); transition:width .3s linear}
+  .set-label{color:var(--amber-l); font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px}
 
-  @media (max-width:640px){
-    .bingo{grid-template-columns:repeat(3,1fr)}
-    .cell{min-height:80px; font-size:11px}
+  .nav-btns{display:flex; gap:8px; margin-top:16px}
+  .nav-btns button{flex:1; padding:14px; font-size:14px; font-weight:700; border:none; border-radius:var(--radius-sm); cursor:pointer; font-family:inherit; transition:transform .1s}
+  .nav-btns button:active{transform:scale(.97)}
+  .nav-btns .prev{background:var(--surface2); color:var(--text)}
+  .nav-btns .skip{background:var(--amber); color:#1e1308}
+  .nav-btns .next{background:var(--surface2); color:var(--text)}
+  .complete-banner{display:none; background:linear-gradient(135deg,var(--green),var(--green-l)); color:#052e16; padding:16px; border-radius:var(--radius); font-weight:800; text-align:center; margin:12px 0; font-size:14px}
+  .complete-banner.show{display:block; animation:slideUp .4s}
+  .close-btn{width:100%; padding:14px; margin-top:12px; background:var(--surface2); color:var(--text); border:none; border-radius:var(--radius-sm); font-size:14px; font-weight:700; cursor:pointer; font-family:inherit}
+
+  /* Reset button (subtle) */
+  .reset-btn{display:block; margin:24px auto 0; background:transparent; border:none; color:var(--dim); font-size:12px; cursor:pointer; font-family:inherit; padding:8px 16px}
+  .reset-btn:active{color:var(--red)}
+
+  @media (min-width:600px){
+    .bingo{grid-template-columns:repeat(5,1fr)}
+    .cell{min-height:120px}
   }
 </style>
 </head>
@@ -112,52 +184,76 @@
 
 <div class="login-overlay" id="loginOverlay">
   <div class="login-card">
-    <h2>🎯 Sommarbingo</h2>
-    <div class="lang-toggle" style="display:block; text-align:center; margin-bottom:12px">
+    <div class="logo">🎯</div>
+    <h2 id="loginTitle">Sommarbingo</h2>
+    <div class="lang-toggle">
       <button id="langSvLogin" class="active" onclick="setLang('sv')">SV</button>
       <button id="langEnLogin" onclick="setLang('en')">EN</button>
     </div>
     <div class="desc" id="loginDesc"></div>
     <label for="loginName" id="lblName"></label>
-    <input id="loginName" type="text" placeholder="t.ex. Ella / e.g. Ella" autocomplete="off">
+    <input id="loginName" type="text" placeholder="Ella" autocomplete="off" autocapitalize="words">
     <label for="loginTeam" id="lblTeam"></label>
-    <input id="loginTeam" type="text" placeholder="t.ex. GBK" autocomplete="off">
+    <input id="loginTeam" type="text" placeholder="GBK" autocomplete="off" autocapitalize="characters">
     <button class="btn-primary" id="loginBtn"></button>
-    <div class="sync-status" id="loginStatus" style="text-align:center; margin-top:10px"></div>
+    <div class="status" id="loginStatus"></div>
   </div>
 </div>
 
 <div class="wrap" id="appWrap" style="display:none">
-  <header>
-    <h1>🎯 <span id="hTitle"></span></h1>
-    <div class="sub" id="hSub"></div>
+  <div class="header">
+    <div class="title-block">
+      <h1><span class="emoji">🎯</span><span id="hTitle"></span></h1>
+      <div class="sub" id="hSub"></div>
+    </div>
     <div class="lang-toggle">
       <button id="langSv" class="active" onclick="setLang('sv')">SV</button>
       <button id="langEn" onclick="setLang('en')">EN</button>
     </div>
-  </header>
-
-  <div class="user-bar">
-    <span id="lblPlayer"></span>: <span class="name" id="userName"></span> ·
-    <span id="lblTeamBar"></span>: <span class="name" id="userTeam"></span> ·
-    <span class="sync-status" id="syncStatus">⟳</span>
-    <button class="btn-secondary" id="logoutBtn" style="padding:4px 10px; font-size:12px"></button>
   </div>
 
-  <div class="progress-wrap"><div class="progress-bar" id="progBar"></div></div>
-  <div class="progress-text" id="progText"></div>
+  <div class="hero">
+    <div class="pct-row">
+      <span class="pct" id="heroPct">0%</span>
+      <span class="pct-of" id="heroOf">0/30</span>
+      <span class="pct-label" id="heroLabel"></span>
+    </div>
+    <div class="bar"><div id="progBar" style="width:0%"></div></div>
+    <div class="meta">
+      <span id="heroBingo"></span>
+      <span class="styrke-count" id="heroStyrke"></span>
+    </div>
+  </div>
+
   <div class="prize" id="prize"></div>
 
-  <div class="toolbar">
-    <button class="btn-primary" id="openStyrke"></button>
-    <button class="btn-secondary" id="resetBtn"></button>
+  <div class="user-bar">
+    <div class="avatar" id="userAvatar"></div>
+    <div class="info">
+      <div class="name" id="userName"></div>
+      <div class="team" id="userTeam"></div>
+    </div>
+    <span class="sync" id="syncStatus">⟳</span>
+    <button class="logout" id="logoutBtn" title="Switch player">⎋</button>
   </div>
 
+  <button class="styrke-cta" id="openStyrke">
+    <span class="icon">💪</span>
+    <span class="text">
+      <span class="t1" id="styrkeCtaT1"></span>
+      <span class="t2" id="styrkeCtaT2"></span>
+    </span>
+    <span class="arrow">›</span>
+  </button>
+
   <div class="bingo" id="bingo"></div>
+
+  <button class="reset-btn" id="resetBtn"></button>
 </div>
 
 <div class="modal" id="styrkeModal">
   <div class="modal-card">
+    <div class="grip"></div>
     <h2>💪 <span id="styrkeTitle"></span></h2>
     <div class="desc" id="styrkeDesc"></div>
     <div class="step-list" id="stepList"></div>
@@ -168,13 +264,11 @@
     </div>
     <div class="complete-banner" id="styrkeDone"></div>
     <div class="nav-btns">
-      <button class="btn-secondary" id="prevBtn"></button>
-      <button class="btn-warn" id="skipBtn"></button>
-      <button class="btn-secondary" id="nextBtn"></button>
+      <button class="prev" id="prevBtn"></button>
+      <button class="skip" id="skipBtn"></button>
+      <button class="next" id="nextBtn"></button>
     </div>
-    <div style="text-align:center; margin-top:12px">
-      <button class="btn-danger" id="closeStyrke"></button>
-    </div>
+    <button class="close-btn" id="closeStyrke"></button>
   </div>
 </div>
 
@@ -183,158 +277,160 @@
 let lang = localStorage.getItem("sommarbingo.lang") || "sv";
 const I18N = {
   sv: {
-    hTitle: "Sommarbingo U11-U13",
-    hSub: "Vecka 25-33 · Klarar du hela brickan? Då får du ett litet pris!",
+    hTitle: "Sommarbingo",
+    hSub: "U11-U13 · vecka 25-33",
     loginDesc: "Ange ditt namn och lagkod för att spara din framsteg.",
     lblName: "Ditt namn",
     lblTeam: "Lagkod",
     loginBtn: "Börja träna",
-    lblPlayer: "Spelare",
-    lblTeamBar: "Lag",
-    logout: "Byt spelare",
-    progText: (n,total,pct) => `${n} / ${total} klara (${pct}%)`,
+    loginNoName: "Ange ditt namn.",
+    loginNoTeam: "Ange lagkod.",
+    heroLabel: "KLART",
+    heroBingo: n => `${n} bingo-rutor`,
+    heroStyrke: n => `${n}/3 styrke-pass`,
     prize: "🏆 Hela brickan klar! Hämta ditt pris hos Henke!",
-    openStyrke: "💪 Styrkegymnastikprogram",
-    reset: "Återställ",
+    styrkeCtaT1: "Styrkegymnastikprogram",
+    styrkeCtaT2: "19 övningar · gör 3 gånger för alla styrke-rutor",
+    reset: "Återställ all framsteg",
+    resetConfirm: "Återställ all framsteg? Detta kan inte ångras.",
+    logoutConfirm: "Byta spelare?",
     styrkeTitle: "Styrkegymnastikprogram",
     styrkeDesc: "Tävlings spelare i GBK. Klocka + hopprep. Hållningen! Spänn magen!",
-    prev: "← Föregående",
+    prev: "← Föreg",
     skip: "Hoppa över",
     next: "Nästa →",
     closeStyrke: "Stäng",
-    styrkeDone: "🎉 Styrkegymnastikprogrammet klart! 1 av 3 rutor markerad. Gör det igen för nästa ruta.",
-    infoDone: "Klart – gå vidare →",
-    repTap: "Tryck här för att räkna +1",
+    styrkeDone: "🎉 Programmet klart! 1 av 3 rutor markerad. Gör det igen för nästa ruta.",
+    infoDone: "Klart – fortsätt →",
+    repTap: "Tryck här för att räkna",
     timerStart: "▶ Start",
     timerPause: "⏸ Paus",
     timerReset: "↺ Reset",
-    setLabel: (cur,total) => `Set ${cur} / ${total}`,
-    resetConfirm: "Återställ all framsteg? Detta kan inte ångras.",
-    loginNoName: "Ange ditt namn.",
-    loginNoTeam: "Ange lagkod.",
-    syncSaving: "⟳ Sparar...",
+    setLabel: (c,t) => `SET ${c}/${t}`,
+    syncSaving: "⟳ Sparar",
     syncSaved: "✓ Sparat",
-    syncOffline: "✗ Sparar lokalt",
+    syncOffline: "✗ Offline",
     syncSynced: "✓ Synkad",
     syncNewPlayer: "Ny spelare",
     syncLoadFail: "✗ Kunde inte ladda",
-    logoutConfirm: "Byta spelare? Lokal framsteg sparas inte om du rensar.",
-    styrkeCellLabel: "Gör hela styrkegymnastikprogrammet (se nedan)",
+    styrkeCellLabel: "Gör hela styrkegymnastikprogrammet",
+    unmarkStyrke: "Avmarkera denna Styrke-ruta?",
   },
   en: {
-    hTitle: "Summer Bingo U11-U13",
-    hSub: "Week 25-33 · Can you clear the whole board? Then you get a small prize!",
+    hTitle: "Summer Bingo",
+    hSub: "U11-U13 · week 25-33",
     loginDesc: "Enter your name and team code to save your progress.",
     lblName: "Your name",
     lblTeam: "Team code",
     loginBtn: "Start training",
-    lblPlayer: "Player",
-    lblTeamBar: "Team",
-    logout: "Switch player",
-    progText: (n,total,pct) => `${n} / ${total} done (${pct}%)`,
+    loginNoName: "Enter your name.",
+    loginNoTeam: "Enter team code.",
+    heroLabel: "DONE",
+    heroBingo: n => `${n} bingo cells`,
+    heroStyrke: n => `${n}/3 strength rounds`,
     prize: "🏆 Whole board cleared! Collect your prize from Henke!",
-    openStyrke: "💪 Strength program",
-    reset: "Reset",
+    styrkeCtaT1: "Strength Program",
+    styrkeCtaT2: "19 exercises · do 3 times to fill all strength cells",
+    reset: "Reset all progress",
+    resetConfirm: "Reset all progress? This cannot be undone.",
+    logoutConfirm: "Switch player?",
     styrkeTitle: "Strength Program",
     styrkeDesc: "Competitive players in GBK. Watch + jump rope. Posture! Tighten your abs!",
-    prev: "← Previous",
+    prev: "← Prev",
     skip: "Skip",
     next: "Next →",
     closeStyrke: "Close",
-    styrkeDone: "🎉 Strength program done! 1 of 3 cells marked. Do it again for the next cell.",
+    styrkeDone: "🎉 Program done! 1 of 3 cells marked. Do it again for the next cell.",
     infoDone: "Done – continue →",
-    repTap: "Tap here to count +1",
+    repTap: "Tap here to count",
     timerStart: "▶ Start",
     timerPause: "⏸ Pause",
     timerReset: "↺ Reset",
-    setLabel: (cur,total) => `Set ${cur} / ${total}`,
-    resetConfirm: "Reset all progress? This cannot be undone.",
-    loginNoName: "Enter your name.",
-    loginNoTeam: "Enter team code.",
-    syncSaving: "⟳ Saving...",
+    setLabel: (c,t) => `SET ${c}/${t}`,
+    syncSaving: "⟳ Saving",
     syncSaved: "✓ Saved",
-    syncOffline: "✗ Saving locally",
+    syncOffline: "✗ Offline",
     syncSynced: "✓ Synced",
     syncNewPlayer: "New player",
     syncLoadFail: "✗ Could not load",
-    logoutConfirm: "Switch player? Local progress won't be saved if you clear.",
-    styrkeCellLabel: "Do the whole strength program (see below)",
+    styrkeCellLabel: "Do the whole strength program",
+    unmarkStyrke: "Unmark this Strength cell?",
   }
 };
 function t(key){ const v = I18N[lang][key]; return typeof v === "function" ? v : v; }
 
-// ---------- Data (bilingual) ----------
+// ---------- Data ----------
 const BINGO = [
   [
-    {sv:"Hoppa 2 x 100 hopprep (backa 5 om du missar)", en:"Jump 2 x 100 jump rope (go back 5 if you miss)"},
-    {sv:"Växla gång 20s / ruscher 10s i 10 min", en:"Alternate walking 20s / sprints 10s for 10 min"},
-    {sv:"Spring 5 varv runt ett hus", en:"Run 5 laps around a house"},
-    {sv:"10 utfallssteg + 10 skridskohopp, 3 omg!", en:"10 lunges + 10 skate jumps, 3 rounds!"},
-    {sv:"Jogga/spring 15 min utan att stanna", en:"Jog/run 15 min without stopping"},
-    {sv:"Hitta på ett eget pass i minst 15 min", en:"Make up your own workout, at least 15 min"},
+    {sv:"Hoppa 2×100 hopprep (backa 5 om du missar)",en:"Jump 2×100 jump rope (go back 5 if you miss)"},
+    {sv:"Växla gång 20s/rusch 10s i 10 min",en:"Alternate walk 20s/sprint 10s for 10 min"},
+    {sv:"Spring 5 varv runt ett hus",en:"Run 5 laps around a house"},
+    {sv:"10 utfallssteg + 10 skridskohopp, 3 omg!",en:"10 lunges + 10 skate jumps, 3 rounds!"},
+    {sv:"Jogga 15 min utan att stanna",en:"Jog 15 min without stopping"},
+    {sv:"Eget pass i minst 15 min",en:"Your own workout, at least 15 min"},
   ],
   [
-    {sv:"Krabbgång 20m + spindelgång 20m, 4 omg!", en:"Crab walk 20m + spider walk 20m, 4 rounds!"},
-    {sv:"Gå baklänges 2 min + 2 x 30s plankan (mage)", en:"Walk backwards 2 min + 2 x 30s plank (abs)"},
-    {sv:"Hitta på ett eget pass i minst 15 min", en:"Make up your own workout, at least 15 min"},
-    {sv:"Kasta tennisboll (overhead) mot vägg, fånga efter studs, 50 ggr", en:"Throw tennis ball (overhead) at wall, catch after bounce, 50 times"},
-    {sv:"5 x 5 upphopp så högt du kan + 20 sit-ups", en:"5 x 5 jumps as high as you can + 20 sit-ups"},
-    {sv:"Gör någon fysisk sport i minst 1 timme", en:"Do any physical sport for at least 1 hour"},
+    {sv:"Krabbgång 20m + spindelgång 20m, 4 omg!",en:"Crab walk 20m + spider walk 20m, 4 rounds!"},
+    {sv:"Gå baklänges 2 min + 2×30s plankan",en:"Walk backwards 2 min + 2×30s plank"},
+    {sv:"Eget pass i minst 15 min",en:"Your own workout, at least 15 min"},
+    {sv:"Kasta tennisboll mot vägg, fånga efter studs, 50 ggr",en:"Throw tennis ball at wall, catch after bounce, 50 times"},
+    {sv:"5×5 upphopp maxhöjd + 20 sit-ups",en:"5×5 max-height jumps + 20 sit-ups"},
+    {sv:"Fysisk sport i minst 1 timme",en:"Physical sport for at least 1 hour"},
   ],
   [
-    {sv:"9 x 10s snabba fötter + 3 x 10 burpees", en:"9 x 10s quick feet + 3 x 10 burpees"},
-    {sv:"Spela badminton minst 1 timme (klubbpass räknas)", en:"Play badminton at least 1 hour (club practices count)"},
-    {sv:"Jonglera backhand/forehand med badmintonboll, 30 st i rad", en:"Juggle backhand/forehand with shuttlecock, 30 in a row"},
-    {sv:"Ät två glassar på en dag. Gör bomben när du badar.", en:"Eat two ice creams in one day. Do the bomb when you swim."},
-    {sv:"Lek jage minst 10 min + 2 x 10 armhävningar", en:"Play tag at least 10 min + 2 x 10 push-ups"},
-    {sv:"Växla joggning 20s / ruscher 10s i 10 min", en:"Alternate jogging 20s / sprints 10s for 10 min"},
+    {sv:"9×10s snabba fötter + 3×10 burpees",en:"9×10s quick feet + 3×10 burpees"},
+    {sv:"Spela badminton minst 1 timme",en:"Play badminton at least 1 hour"},
+    {sv:"Jonglera backhand/forehand, 30 i rad",en:"Juggle backhand/forehand, 30 in a row"},
+    {sv:"Ät 2 glassar på en dag + gör bomben när du badar",en:"Eat 2 ice creams in one day + do the bomb when you swim"},
+    {sv:"Lek jage 10 min + 2×10 armhävningar",en:"Play tag 10 min + 2×10 push-ups"},
+    {sv:"Växla jogg 20s/rusch 10s i 10 min",en:"Alternate jog 20s/sprint 10s for 10 min"},
   ],
   [
-    {sv:"Gör en hinderbana med minst 5 hinder, klara den. 3 omg!", en:"Build an obstacle course with at least 5 obstacles, complete it. 3 rounds!"},
+    {sv:"Hinderbana med 5 hinder, klara den, 3 omg!",en:"Obstacle course with 5 obstacles, complete it, 3 rounds!"},
     "STYRKE",
-    {sv:"Spring i trappor 5 ggr, minst 10 trappsteg", en:"Run stairs 5 times, at least 10 steps"},
-    {sv:"Cykla 20 min + gör en yoga-pose i 1 min", en:"Bike 20 min + do a yoga pose for 1 min"},
-    {sv:"Håll balansen på ett ben 2 x 30s, 3 omg", en:"Balance on one leg 2 x 30s, 3 rounds"},
-    {sv:"Backträning. 10 ggr i kort backe (10-15s löpning)", en:"Hill training. 10 times in a short hill (10-15s running)"},
+    {sv:"Spring i trappor 5 ggr, minst 10 steg",en:"Run stairs 5 times, at least 10 steps"},
+    {sv:"Cykla 20 min + 1 yoga-pose i 1 min",en:"Bike 20 min + 1 yoga pose for 1 min"},
+    {sv:"Balans på ett ben 2×30s, 3 omg",en:"Balance on one leg 2×30s, 3 rounds"},
+    {sv:"Backträning 10 ggr (10-15s löpning)",en:"Hill training 10 times (10-15s running)"},
   ],
   [
-    {sv:"Gå balansgång 1 min framlänges + baklänges", en:"Walk a balance line 1 min forward + backward"},
-    {sv:"Dansa till en favoritlåt (ca 3 min) + 4 x 5 hoppsmashar utan boll", en:"Dance to a favorite song (~3 min) + 4 x 5 jump smashes without shuttle"},
-    {sv:"8 x 10s snabba fötter + 3 x 10 burpees", en:"8 x 10s quick feet + 3 x 10 burpees"},
+    {sv:"Balansgång 1 min fram + bak",en:"Balance walk 1 min forward + backward"},
+    {sv:"Dansa till en låt (~3 min) + 4×5 hoppsmashar",en:"Dance to a song (~3 min) + 4×5 jump smashes"},
+    {sv:"8×10s snabba fötter + 3×10 burpees",en:"8×10s quick feet + 3×10 burpees"},
     "STYRKE",
-    {sv:"Hoppa som en groda till ett träd, minst 10m, 3 ggr!", en:"Jump like a frog to a tree, at least 10m, 3 times!"},
-    {sv:"Spela badminton minst 1 timme (klubbpass räknas)", en:"Play badminton at least 1 hour (club practices count)"},
+    {sv:"Grodhopp till ett träd, minst 10m, 3 ggr!",en:"Frog jump to a tree, at least 10m, 3 times!"},
+    {sv:"Spela badminton minst 1 timme",en:"Play badminton at least 1 hour"},
   ],
   [
     "STYRKE",
-    {sv:"Jogga/spring minst 20 min utan att stanna", en:"Jog/run at least 20 min without stopping"},
-    {sv:"Backträning. 10 ggr i kort backe (10-15s löpning)", en:"Hill training. 10 times in a short hill (10-15s running)"},
-    {sv:"Spring i trappor 5 ggr, minst 10 trappsteg", en:"Run stairs 5 times, at least 10 steps"},
-    {sv:"Hoppa 2 x 100 hopprep (backa 5 om du missar)", en:"Jump 2 x 100 jump rope (go back 5 if you miss)"},
-    {sv:"Spring i trappor 5 ggr, minst 10 trappsteg", en:"Run stairs 5 times, at least 10 steps"},
+    {sv:"Jogga/spring minst 20 min",en:"Jog/run at least 20 min"},
+    {sv:"Backträning 10 ggr (10-15s löpning)",en:"Hill training 10 times (10-15s running)"},
+    {sv:"Spring i trappor 5 ggr, minst 10 steg",en:"Run stairs 5 times, at least 10 steps"},
+    {sv:"Hoppa 2×100 hopprep (backa 5 om du missar)",en:"Jump 2×100 jump rope (go back 5 if you miss)"},
+    {sv:"Spring i trappor 5 ggr, minst 10 steg",en:"Run stairs 5 times, at least 10 steps"},
   ],
 ];
 
 const STYRKE = [
-  {t:{sv:"Uppvärmning",en:"Warm-up"}, type:"info", hint:{sv:"Vanlig badmintonuppvärmning ca 5 min + minst 200 hopp med hopprep. Därefter är du redo.",en:"Standard badminton warm-up ~5 min + at least 200 jump rope jumps. Then you're ready."}},
-  {t:{sv:"Fallskärmshopparen",en:"Parachute jump"}, type:"reps", target:20, hint:{sv:"Upphopp på två ben men landa bara på ett ben. 10 st landning vänster + 10 st landning höger.",en:"Jump on two legs but land on one. 10 landing left + 10 landing right."}},
-  {t:{sv:"Klockan (utfallssteg)",en:"The clock (lunges)"}, type:"reps", target:20, hint:{sv:"Tänk utfallssteg åt olika håll. 20 st = 5 varv.",en:"Lunges in different directions. 20 = 5 rounds."}},
-  {t:{sv:"Sidoplanka",en:"Side plank"}, type:"timer", target:60, sets:2, hint:{sv:"1 minut per sida. Spänn magen!",en:"1 minute per side. Tighten abs!"}},
+  {t:{sv:"Uppvärmning",en:"Warm-up"}, type:"info", hint:{sv:"Badmintonuppvärmning ca 5 min + minst 200 hopp hopprep.",en:"Badminton warm-up ~5 min + at least 200 jump rope jumps."}},
+  {t:{sv:"Fallskärmshopparen",en:"Parachute jump"}, type:"reps", target:20, hint:{sv:"Upphopp på två ben, landa på ett. 10 vänster + 10 höger.",en:"Jump on two legs, land on one. 10 left + 10 right."}},
+  {t:{sv:"Klockan (utfallssteg)",en:"The clock (lunges)"}, type:"reps", target:20, hint:{sv:"Utfallssteg åt olika håll. 20 st = 5 varv.",en:"Lunges in different directions. 20 = 5 rounds."}},
+  {t:{sv:"Sidoplanka",en:"Side plank"}, type:"timer", target:60, sets:2, hint:{sv:"1 min per sida. Spänn magen!",en:"1 min per side. Tighten abs!"}},
   {t:{sv:"Skridskohopp",en:"Skate jumps"}, type:"reps", target:20, hint:{sv:"Tryck ordentligt i sidled.",en:"Push hard sideways."}},
-  {t:{sv:"Enbensböj till sittande",en:"Single-leg squat to sit"}, type:"reps", target:20, hint:{sv:"Sätt dig på ett ben (det andra rakt fram) på en stol och tryck upp igen, 10 st/ben. Stabilitet i knäet!",en:"Sit on one leg (other straight ahead) onto a chair and push back up, 10/leg. Knee stability!"}},
-  {t:{sv:"Diagonalen",en:"The diagonal"}, type:"timer", target:30, sets:2, hint:{sv:"Gå ner på alla fyra, lyft vänster arm + höger ben. Skifta efter 30 sek. Totalt 30+30 sek.",en:"Go on all fours, lift left arm + right leg. Switch after 30 sec. Total 30+30 sec."}},
-  {t:{sv:"Skidhopp",en:"Skier jumps"}, type:"reps", target:20, hint:{sv:"Hoppande utfallssteg, skifta ben som är fram när du hoppar.",en:"Jumping lunges, switch front leg as you jump."}},
-  {t:{sv:"Omvända armhävningar (dips)",en:"Reverse push-ups (dips)"}, type:"reps", target:20, hint:{sv:"På bänk, mage uppåt. Tryck upp höften! Böj armarna. 10+10. Vila några sekunder efter de 10 första.",en:"On bench, stomach up. Push hips up! Bend arms. 10+10. Rest a few sec after the first 10."}},
-  {t:{sv:"Grodhopp",en:"Frog jumps"}, type:"reps", target:20, hint:{sv:"10+10. Vila några sekunder efter de 10 första.",en:"10+10. Rest a few sec after the first 10."}},
+  {t:{sv:"Enbensböj till sittande",en:"Single-leg squat to sit"}, type:"reps", target:20, hint:{sv:"Sätt dig på ett ben på en stol och tryck upp, 10/ben.",en:"Sit on one leg onto a chair and push up, 10/leg."}},
+  {t:{sv:"Diagonalen",en:"The diagonal"}, type:"timer", target:30, sets:2, hint:{sv:"Alla fyra, lyft vänster arm + höger ben. Skifta efter 30s.",en:"All fours, lift left arm + right leg. Switch after 30s."}},
+  {t:{sv:"Skidhopp",en:"Skier jumps"}, type:"reps", target:20, hint:{sv:"Hoppande utfallssteg, skifta framben.",en:"Jumping lunges, switch front leg."}},
+  {t:{sv:"Omvända armhävningar (dips)",en:"Reverse push-ups (dips)"}, type:"reps", target:20, hint:{sv:"På bänk, mage uppåt. 10+10. Vila efter 10.",en:"On bench, stomach up. 10+10. Rest after 10."}},
+  {t:{sv:"Grodhopp",en:"Frog jumps"}, type:"reps", target:20, hint:{sv:"10+10. Vila efter 10.",en:"10+10. Rest after 10."}},
   {t:{sv:"Plankan",en:"Plank"}, type:"timer", target:60, sets:1, hint:{sv:"Håll 1 minut. Spänn magen!",en:"Hold 1 minute. Tighten abs!"}},
-  {t:{sv:"Utfallssteg",en:"Lunges"}, type:"reps", target:20, hint:{sv:"20 st = 10/ben. Ett steg och tryck tillbaka.",en:"20 = 10/leg. One step and push back."}},
+  {t:{sv:"Utfallssteg",en:"Lunges"}, type:"reps", target:20, hint:{sv:"10/ben. Ett steg och tryck tillbaka.",en:"10/leg. One step and push back."}},
   {t:{sv:"Ryggresningar",en:"Back raises"}, type:"reps", target:20, hint:{sv:"20 st.",en:"20 reps."}},
-  {t:{sv:"Tåhävningar på bänk/i trappa",en:"Calf raises on bench/stairs"}, type:"reps", target:40, hint:{sv:"20 st per ben. Snabbt upp och långsamt ner.",en:"20 per leg. Fast up, slow down."}},
-  {t:{sv:"Bulgariska utfall",en:"Bulgarian split squats"}, type:"reps", target:20, hint:{sv:"10 st/ben. Bakre benet på bänk eller liknande.",en:"10/leg. Rear leg on bench or similar."}},
+  {t:{sv:"Tåhävningar på bänk/trappa",en:"Calf raises on bench/stairs"}, type:"reps", target:40, hint:{sv:"20/ben. Snabbt upp, långsamt ner.",en:"20/leg. Fast up, slow down."}},
+  {t:{sv:"Bulgariska utfall",en:"Bulgarian split squats"}, type:"reps", target:20, hint:{sv:"10/ben. Bakre benet på bänk.",en:"10/leg. Rear leg on bench."}},
   {t:{sv:"Armhävningar",en:"Push-ups"}, type:"reps", target:15, hint:{sv:"15 st.",en:"15 reps."}},
   {t:{sv:"Defensivsteg (plocka smash)",en:"Defensive steps (pick up smash)"}, type:"reps", target:20, hint:{sv:"20 st.",en:"20 reps."}},
-  {t:{sv:"Fällkniv med raka eller böjda ben",en:"V-sit with straight or bent legs"}, type:"reps", target:20, hint:{sv:"20 st. Välj raka eller böjda ben.",en:"20 reps. Choose straight or bent legs."}},
-  {t:{sv:"Steg upp på en bänk",en:"Step up onto a bench"}, type:"reps", target:20, hint:{sv:"10 st/ben.",en:"10/leg."}},
+  {t:{sv:"Fällkniv",en:"V-sit"}, type:"reps", target:20, hint:{sv:"20 st. Raka eller böjda ben.",en:"20 reps. Straight or bent legs."}},
+  {t:{sv:"Steg upp på bänk",en:"Step up onto a bench"}, type:"reps", target:20, hint:{sv:"10/ben.",en:"10/leg."}},
 ];
 
 // ---------- State ----------
@@ -364,7 +460,7 @@ function initAppwrite(){
 function setSync(status, msg){
   const el = document.getElementById("syncStatus");
   if (!el) return;
-  el.className = "sync-status " + (status || "");
+  el.className = "sync " + (status || "");
   el.textContent = msg || (status === "ok" ? t("syncSaved") : status === "err" ? t("syncOffline") : "⟳");
 }
 
@@ -377,10 +473,8 @@ async function syncPush(){
   setSync("", t("syncSaving"));
   try {
     const payload = {
-      player_name: player.name,
-      team_code: player.team,
-      bingo: JSON.stringify(bingoState),
-      styrke: JSON.stringify(styrkeState),
+      player_name: player.name, team_code: player.team,
+      bingo: JSON.stringify(bingoState), styrke: JSON.stringify(styrkeState),
       updated_at: new Date().toISOString()
     };
     try {
@@ -391,10 +485,7 @@ async function syncPush(){
       } else { throw updateErr; }
     }
     setSync("ok", t("syncSaved"));
-  } catch(e){
-    console.warn(e);
-    setSync("err", t("syncOffline"));
-  }
+  } catch(e){ console.warn(e); setSync("err", t("syncOffline")); }
 }
 
 async function syncPull(){
@@ -415,9 +506,7 @@ async function syncPull(){
   }
 }
 
-function safeParse(s, fallback){
-  try { return JSON.parse(s) || fallback; } catch(e){ return fallback; }
-}
+function safeParse(s, fallback){ try { return JSON.parse(s) || fallback; } catch(e){ return fallback; } }
 
 // ---------- Lang ----------
 function setLang(l){
@@ -443,10 +532,9 @@ function applyTexts(){
   document.getElementById("lblName").textContent = t("lblName");
   document.getElementById("lblTeam").textContent = t("lblTeam");
   document.getElementById("loginBtn").textContent = t("loginBtn");
-  document.getElementById("lblPlayer").textContent = t("lblPlayer");
-  document.getElementById("lblTeamBar").textContent = t("lblTeamBar");
-  document.getElementById("logoutBtn").textContent = t("logout");
-  document.getElementById("openStyrke").textContent = t("openStyrke");
+  document.getElementById("logoutBtn").title = t("logoutConfirm");
+  document.getElementById("styrkeCtaT1").textContent = t("styrkeCtaT1");
+  document.getElementById("styrkeCtaT2").textContent = t("styrkeCtaT2");
   document.getElementById("resetBtn").textContent = t("reset");
   document.getElementById("prize").textContent = t("prize");
   document.getElementById("styrkeTitle").textContent = t("styrkeTitle");
@@ -456,6 +544,7 @@ function applyTexts(){
   document.getElementById("nextBtn").textContent = t("next");
   document.getElementById("closeStyrke").textContent = t("closeStyrke");
   document.getElementById("styrkeDone").textContent = t("styrkeDone");
+  document.getElementById("heroLabel").textContent = t("heroLabel");
   updateProgress();
 }
 
@@ -463,9 +552,7 @@ function applyTexts(){
 function showLogin(){
   document.getElementById("loginOverlay").style.display = "flex";
   document.getElementById("appWrap").style.display = "none";
-  if (window.DEFAULT_TEAM_CODE){
-    document.getElementById("loginTeam").value = window.DEFAULT_TEAM_CODE;
-  }
+  if (window.DEFAULT_TEAM_CODE) document.getElementById("loginTeam").value = window.DEFAULT_TEAM_CODE;
 }
 function hideLogin(){
   document.getElementById("loginOverlay").style.display = "none";
@@ -483,6 +570,7 @@ function doLogin(){
   hideLogin();
   document.getElementById("userName").textContent = name;
   document.getElementById("userTeam").textContent = team;
+  document.getElementById("userAvatar").textContent = name.charAt(0).toUpperCase();
   renderBingo();
   syncPull();
 }
@@ -497,11 +585,7 @@ function doLogout(){
 // ---------- Bingo ----------
 function saveBingo(){ localStorage.setItem(KEY_BINGO, JSON.stringify(bingoState)); scheduleSync(); }
 function saveStyrke(){ localStorage.setItem(KEY_STYRKE, JSON.stringify(styrkeState)); scheduleSync(); }
-
-function scheduleSync(){
-  if (syncTimer) clearTimeout(syncTimer);
-  syncTimer = setTimeout(syncPush, 800);
-}
+function scheduleSync(){ if (syncTimer) clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 800); }
 
 function renderBingo(){
   const grid = document.getElementById("bingo");
@@ -521,10 +605,10 @@ function renderBingo(){
     };
     if (isStyrke){
       let pressTimer = null;
-      const startPress = (e) => {
+      const startPress = () => {
         pressTimer = setTimeout(() => {
           pressTimer = null;
-          if (bingoState.includes(idx) && confirm(lang === "sv" ? "Avmarkera denna Styrke-ruta?" : "Unmark this Strength cell?")){
+          if (bingoState.includes(idx) && confirm(t("unmarkStyrke"))){
             setBingoDone(idx, false);
             renderBingo();
             scheduleSync();
@@ -561,12 +645,18 @@ function updateProgress(){
   const total = 30;
   const n = bingoState.length;
   const pct = Math.min(100, Math.round(n/total*100));
+  const styrkeCells = [];
+  BINGO.forEach((row, r) => row.forEach((cell, c) => { if (cell === "STYRKE") styrkeCells.push(r*6 + c); }));
+  const styrkeDone = styrkeCells.filter(idx => bingoState.includes(idx)).length;
   document.getElementById("progBar").style.width = pct + "%";
-  document.getElementById("progText").textContent = t("progText")(n, total, pct);
+  document.getElementById("heroPct").textContent = pct + "%";
+  document.getElementById("heroOf").textContent = `${n}/${total}`;
+  document.getElementById("heroBingo").textContent = t("heroBingo")(n);
+  document.getElementById("heroStyrke").textContent = t("heroStyrke")(styrkeDone);
   document.getElementById("prize").classList.toggle("show", n === total);
 }
 
-// ---------- Styrkegymnastik ----------
+// ---------- Styrke ----------
 function openStyrke(){
   document.getElementById("styrkeModal").classList.add("show");
   renderStepList();
@@ -584,7 +674,7 @@ function renderStepList(){
     const st = styrkeState[i] || {done:false};
     const el = document.createElement("div");
     el.className = "step-item" + (i === currentStep ? " active" : "") + (st.done ? " done" : "");
-    const stat = st.done ? "✓" : (s.type === "reps" ? `${st.count||0}/${s.target}` : s.type === "timer" ? `${st.elapsed||0}s/${s.target*(s.sets||1)}s` : "");
+    const stat = st.done ? "✓" : (s.type === "reps" ? `${st.count||0}/${s.target}` : s.type === "timer" ? `${st.elapsed||0}s` : "");
     el.innerHTML = `<span class="idx">${i+1}</span><span class="label">${s.t[lang]}</span><span class="stat">${stat}</span>`;
     el.onclick = () => { stopTimer(); currentStep = i; renderStepList(); showStep(i); };
     list.appendChild(el);
@@ -606,10 +696,10 @@ function showStep(i){
   } else if (s.type === "reps"){
     const count = st.count || 0;
     body.innerHTML = `
-      <div class="counter-display"><span id="repCount">${count}</span><span class="target"> / ${s.target}</span></div>
+      <div class="counter-display"><span id="repCount">${count}</span><span class="target">/${s.target}</span></div>
       <div class="counter-btns">
-        <button class="btn-secondary" id="repMinus">−</button>
-        <button class="btn-primary" id="repPlus">+</button>
+        <button class="minus" id="repMinus">−</button>
+        <button class="plus" id="repPlus">+</button>
       </div>
       <div class="tap-area" id="repTap">${t("repTap")}</div>
     `;
@@ -622,13 +712,13 @@ function showStep(i){
     const elapsed = st.elapsed || 0;
     const remaining = s.target - elapsed;
     body.innerHTML = `
-      ${sets > 1 ? `<div style="text-align:center; color:var(--accent2); font-weight:700; margin-bottom:6px">${t("setLabel")(curSet, sets)}</div>` : ""}
+      ${sets > 1 ? `<div class="set-label">${t("setLabel")(curSet, sets)}</div>` : ""}
       <div class="timer-display" id="timerDisp">${fmtTime(remaining)}</div>
       <div class="timer-progress"><div id="timerProg" style="width:${(elapsed/s.target)*100}%"></div></div>
       <div class="counter-btns">
-        <button class="btn-primary" id="timerStart">${t("timerStart")}</button>
-        <button class="btn-secondary" id="timerPause">${t("timerPause")}</button>
-        <button class="btn-danger" id="timerReset">${t("timerReset")}</button>
+        <button class="plus" id="timerStart">${t("timerStart")}</button>
+        <button class="minus" id="timerPause">${t("timerPause")}</button>
+        <button class="minus" id="timerReset">${t("timerReset")}</button>
       </div>
     `;
     document.getElementById("timerStart").onclick = () => startTimer(i);
@@ -675,7 +765,7 @@ function startTimer(i){
       } else {
         st.done = true;
         saveStyrke();
-        markStyrkeDone(i, true);
+        markStyrkeDone(i, false);
       }
     }
     saveStyrke();
@@ -707,8 +797,6 @@ function checkAllStyrkeDone(){
   const allDone = STYRKE.every((_, i) => (styrkeState[i] || {}).done);
   document.getElementById("styrkeDone").classList.toggle("show", allDone);
   if (allDone){
-    // 3 STYRKE cells = 3 full program completions. Mark next unmarked one,
-    // then reset step state so the player can do the program again.
     const styrkeCells = [];
     BINGO.forEach((row, r) => row.forEach((cell, c) => {
       if (cell === "STYRKE") styrkeCells.push(r*6 + c);
@@ -717,7 +805,6 @@ function checkAllStyrkeDone(){
     if (nextCell !== undefined){
       setBingoDone(nextCell, true);
       renderBingo();
-      // Reset styrke steps for next round
       styrkeState = STYRKE.map(() => ({done:false}));
       saveStyrke();
       currentStep = 0;
@@ -733,7 +820,7 @@ function fmtTime(sec){
   return `${m}:${String(s).padStart(2,"0")}`;
 }
 
-// ---------- Nav ----------
+// ---------- Wire up ----------
 document.getElementById("prevBtn").onclick = () => { stopTimer(); if (currentStep > 0){ currentStep--; showStep(currentStep); } };
 document.getElementById("nextBtn").onclick = () => { stopTimer(); if (currentStep < STYRKE.length - 1){ currentStep++; showStep(currentStep); } };
 document.getElementById("skipBtn").onclick = () => { stopTimer(); if (currentStep < STYRKE.length - 1){ currentStep++; showStep(currentStep); } };
@@ -751,6 +838,8 @@ document.getElementById("resetBtn").onclick = () => {
     syncPush();
   }
 };
+document.getElementById("loginTeam").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+document.getElementById("loginName").addEventListener("keydown", e => { if (e.key === "Enter") document.getElementById("loginTeam").focus(); });
 
 // ---------- Init ----------
 initAppwrite();
@@ -759,10 +848,18 @@ if (player){
   hideLogin();
   document.getElementById("userName").textContent = player.name;
   document.getElementById("userTeam").textContent = player.team;
+  document.getElementById("userAvatar").textContent = player.name.charAt(0).toUpperCase();
   renderBingo();
   syncPull();
 } else {
   showLogin();
+}
+
+// ---------- PWA Service Worker ----------
+if ("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(e => console.warn("SW registration failed", e));
+  });
 }
 </script>
 </body>
