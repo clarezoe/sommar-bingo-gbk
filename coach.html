@@ -339,7 +339,7 @@ function renderPlayers(players){
     window._currentDates = dates;
     const bingoDone = bingo.length;
     const styrkeCompletions = STYRKE_CELLS.filter(idx => bingo.includes(idx)).length;
-    const pct = Math.round((bingoDone / 30) * 100);
+    const pct = Math.round((bingoDone / 36) * 100);
     const updated = p.updated_at ? new Date(p.updated_at).toLocaleString("sv-SE", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"}) : "—";
     const initial = (p.player_name || "?").charAt(0).toUpperCase();
     const circumference = 2 * Math.PI * 18;
@@ -350,7 +350,7 @@ function renderPlayers(players){
         <div class="info">
           <div class="name">${escapeHtml(p.player_name)}</div>
           <div class="stats">
-            <span class="bingo-stat">🎯 ${bingoDone}/30</span>
+            <span class="bingo-stat">🎯 ${bingoDone}/36</span>
             <span class="styrke-stat">💪 ${styrkeCompletions}/3</span>
             <span>${updated}</span>
           </div>
@@ -375,7 +375,7 @@ function renderPlayers(players){
 
 function renderMiniBingo(bingo, notes, dates, playerName){
   let html = "";
-  for (let i = 0; i < 30; i++){
+  for (let i = 0; i < 36; i++){
     const done = bingo.includes(i);
     const isStyrke = STYRKE_CELLS.includes(i);
     const hasNote = notes && notes[i];

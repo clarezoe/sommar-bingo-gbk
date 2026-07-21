@@ -280,7 +280,7 @@
       <div class="hero">
         <div class="pct-row">
           <span class="pct" id="heroPct">0%</span>
-          <span class="pct-of" id="heroOf">0/30</span>
+          <span class="pct-of" id="heroOf">0/36</span>
           <span class="pct-label" id="heroLabel"></span>
         </div>
         <div class="bar"><div id="progBar" style="width:0%"></div></div>
@@ -909,7 +909,7 @@ function todayStr(){
 }
 
 function updateProgress(){
-  const total = 30;
+  const total = 36;
   const n = bingoState.length;
   const pct = Math.min(100, Math.round(n/total*100));
   const styrkeCells = [];
