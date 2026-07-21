@@ -185,7 +185,7 @@ function applyTexts(){
 
 const COACH_PW_KEY = "sommarbingo.coachAuth";
 function checkCoachAuth(){
-  if (sessionStorage.getItem(COACH_PW_KEY) === "1"){
+  if (localStorage.getItem(COACH_PW_KEY) === "1"){
     document.getElementById("coachLogin").style.display = "none";
     document.getElementById("appWrap").style.display = "block";
     return true;
@@ -198,7 +198,7 @@ function tryCoachLogin(){
   const pw = document.getElementById("coachPw").value;
   const expected = window.COACH_PASSWORD || "";
   if (pw && pw === expected){
-    sessionStorage.setItem(COACH_PW_KEY, "1");
+    localStorage.setItem(COACH_PW_KEY, "1");
     document.getElementById("coachPwStatus").textContent = "";
     checkCoachAuth();
     if (window.DEFAULT_TEAM_CODE){
