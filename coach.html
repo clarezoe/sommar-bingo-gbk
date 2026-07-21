@@ -117,7 +117,10 @@
     <label style="display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;font-weight:700;text-transform:uppercase;letter-spacing:.5px" id="lblCoachPw"></label>
     <div style="position:relative">
       <input id="coachPw" type="password" placeholder="••••••" autocomplete="off" style="width:100%;padding:14px 44px 14px 16px;border-radius:var(--radius-sm);border:2px solid var(--surface2);background:var(--bg);color:var(--text);font-size:17px;font-family:inherit">
-      <button type="button" id="pwToggle" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--muted);font-size:20px;padding:4px 8px;cursor:pointer;font-family:inherit;line-height:1">👁</button>
+      <button type="button" id="pwToggle" aria-label="Show password" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--muted);padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center">
+        <svg id="pwEyeOpen" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg id="pwEyeClosed" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      </button>
     </div>
     <button class="btn-primary" id="coachPwBtn" style="width:100%;margin-top:20px;padding:16px;font-size:16px;font-weight:800;background:var(--green);color:#052e16;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit"></button>
     <div class="status" id="coachPwStatus" style="font-size:12px;color:var(--red);text-align:center;margin-top:12px;min-height:16px"></div>
@@ -242,9 +245,10 @@ document.getElementById("coachPwBtn").onclick = tryCoachLogin;
 document.getElementById("coachPw").addEventListener("keydown", e => { if (e.key === "Enter") tryCoachLogin(); });
 document.getElementById("pwToggle").onclick = () => {
   const inp = document.getElementById("coachPw");
-  const btn = document.getElementById("pwToggle");
-  if (inp.type === "password"){ inp.type = "text"; btn.textContent = "🙈"; }
-  else { inp.type = "password"; btn.textContent = "👁"; }
+  const open = document.getElementById("pwEyeOpen");
+  const closed = document.getElementById("pwEyeClosed");
+  if (inp.type === "password"){ inp.type = "text"; open.style.display = "none"; closed.style.display = "block"; }
+  else { inp.type = "password"; open.style.display = "block"; closed.style.display = "none"; }
 };
 
 function initAppwrite(){
