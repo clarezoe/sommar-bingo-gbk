@@ -97,7 +97,7 @@ const I18N = {
     loadBtn: "Ladda spelare",
     refreshBtn: "↻ Uppdatera",
     lblPlayersIn: "Spelare i",
-    thPlayer: "Spelare", thBingo: "Bingo", thStyrke: "Styrke", thTotal: "Total",
+    thPlayer: "Spelare", thBingo: "Bingo", thStyrke: "Styrke (ggr)", thTotal: "Total",
     thUpdated: "Uppdaterad", thDetail: "", detailBtn: "Detaljer",
     bingoLabel: "Bingo-bricka (grön=klar, gul=styrke):",
     styrkeLabel: "Styrkegymnastik:",
@@ -116,7 +116,7 @@ const I18N = {
     loadBtn: "Load players",
     refreshBtn: "↻ Refresh",
     lblPlayersIn: "Players in",
-    thPlayer: "Player", thBingo: "Bingo", thStyrke: "Strength", thTotal: "Total",
+    thPlayer: "Player", thBingo: "Bingo", thStyrke: "Strength (x)", thTotal: "Total",
     thUpdated: "Updated", thDetail: "", detailBtn: "Details",
     bingoLabel: "Bingo board (green=done, yellow=strength):",
     styrkeLabel: "Strength program:",
@@ -207,15 +207,17 @@ function renderPlayers(team, players){
     const bingo = safeParse(p.bingo, []);
     const styrke = safeParse(p.styrke, []);
     const bingoDone = bingo.length;
-    const styrkeDone = STYRKE_COUNT ? styrke.filter(s => s && s.done).length : 0;
+    // Styrke completions = how many of the 3 STYRKE bingo cells are marked
+    const styrkeCompletions = STYRKE_CELLS.filter(idx => bingo.includes(idx)).length;
+    const styrkeStepDone = STYRKE_COUNT ? styrke.filter(s => s && s.done).length : 0;
     const totalPct = Math.round((bingoDone / 30) * 100);
-    const styrkePct = Math.round((styrkeDone / 19) * 100);
+    const styrkePct = Math.round((styrkeCompletions / 3) * 100);
     const updated = p.updated_at ? new Date(p.updated_at).toLocaleString("sv-SE", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"}) : "—";
     html += `<tr>
       <td><strong>${escapeHtml(p.player_name)}</strong></td>
       <td><span class="num">${bingoDone}/30</span> <span class="pct-bar"><div style="width:${totalPct}%"></div></span></td>
-      <td><span class="num">${styrkeDone}/19</span> <span class="pct-bar styrke"><div style="width:${styrkePct}%"></div></span></td>
-      <td><span class="num">${bingoDone + styrkeDone}/49</span></td>
+      <td><span class="num">${styrkeCompletions}/3</span> <span class="pct-bar styrke"><div style="width:${styrkePct}%"></div></span></td>
+      <td><span class="num">${bingoDone}/30</span></td>
       <td class="updated">${updated}</td>
       <td><button class="btn-secondary" style="padding:6px 10px; font-size:12px" onclick="toggleDetail(${i})">${t("detailBtn")}</button></td>
     </tr>`;

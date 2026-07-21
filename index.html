@@ -202,7 +202,7 @@ const I18N = {
     skip: "Hoppa över",
     next: "Nästa →",
     closeStyrke: "Stäng",
-    styrkeDone: "🎉 Hela styrkegymnastikprogrammet klart! Bingo-rutorna markerade.",
+    styrkeDone: "🎉 Styrkegymnastikprogrammet klart! 1 av 3 rutor markerad. Gör det igen för nästa ruta.",
     infoDone: "Klart – gå vidare →",
     repTap: "Tryck här för att räkna +1",
     timerStart: "▶ Start",
@@ -241,7 +241,7 @@ const I18N = {
     skip: "Skip",
     next: "Next →",
     closeStyrke: "Close",
-    styrkeDone: "🎉 Whole strength program done! Bingo cells marked.",
+    styrkeDone: "🎉 Strength program done! 1 of 3 cells marked. Do it again for the next cell.",
     infoDone: "Done – continue →",
     repTap: "Tap here to count +1",
     timerStart: "▶ Start",
@@ -687,10 +687,23 @@ function checkAllStyrkeDone(){
   const allDone = STYRKE.every((_, i) => (styrkeState[i] || {}).done);
   document.getElementById("styrkeDone").classList.toggle("show", allDone);
   if (allDone){
+    // 3 STYRKE cells = 3 full program completions. Mark next unmarked one,
+    // then reset step state so the player can do the program again.
+    const styrkeCells = [];
     BINGO.forEach((row, r) => row.forEach((cell, c) => {
-      if (cell === "STYRKE") setBingoDone(r*6 + c, true);
+      if (cell === "STYRKE") styrkeCells.push(r*6 + c);
     }));
-    renderBingo();
+    const nextCell = styrkeCells.find(idx => !bingoState.includes(idx));
+    if (nextCell !== undefined){
+      setBingoDone(nextCell, true);
+      renderBingo();
+      // Reset styrke steps for next round
+      styrkeState = STYRKE.map(() => ({done:false}));
+      saveStyrke();
+      currentStep = 0;
+      renderStepList();
+      showStep(0);
+    }
   }
 }
 
