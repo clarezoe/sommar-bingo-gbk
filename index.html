@@ -174,9 +174,52 @@
   .reset-btn{display:block; margin:24px auto 0; background:transparent; border:none; color:var(--dim); font-size:12px; cursor:pointer; font-family:inherit; padding:8px 16px}
   .reset-btn:active{color:var(--red)}
 
-  @media (min-width:600px){
+  /* Mobile: desktop-layout is just normal flow */
+  .desktop-layout{display:block}
+
+  @media (min-width:600px) and (max-width:899px){
     .bingo{grid-template-columns:repeat(5,1fr)}
     .cell{min-height:120px}
+  }
+
+  /* Desktop layout: sidebar + main grid */
+  @media (min-width:900px){
+    .wrap{max-width:1100px; padding:32px 24px 48px}
+    .header h1{font-size:28px}
+    .header .sub{font-size:14px}
+
+    .desktop-layout{display:grid; grid-template-columns:320px 1fr; gap:24px; align-items:start}
+    .desktop-sidebar{position:sticky; top:24px}
+    .desktop-main{min-width:0}
+
+    .hero{margin-bottom:14px; padding:24px}
+    .hero .pct{font-size:48px}
+    .hero .pct-of{font-size:18px}
+    .hero .bar{height:14px}
+
+    .user-bar{margin-bottom:14px; padding:14px 18px}
+    .styrke-cta{margin-bottom:0}
+
+    .bingo{grid-template-columns:repeat(6,1fr); gap:10px}
+    .cell{min-height:130px; padding:14px 12px; font-size:13px}
+    .cell .num{font-size:11px; padding:2px 8px}
+    .cell .check{width:24px; height:24px; font-size:14px}
+    .cell .badge{font-size:20px}
+
+    .modal{align-items:center; padding:20px}
+    .modal-card{max-width:640px; max-height:88vh; border-radius:var(--radius-lg)}
+    .modal-card .grip{display:none}
+
+    .login-card{max-width:420px; padding:36px 32px}
+    .login-card .logo{font-size:56px}
+    .login-card h2{font-size:26px}
+
+    .counter-display{font-size:80px}
+    .counter-btns button{width:72px; height:72px; font-size:32px}
+    .timer-display{font-size:88px}
+    .tap-area{padding:36px 24px; font-size:16px}
+
+    .reset-btn{font-size:13px; margin-top:32px}
   }
 </style>
 </head>
@@ -212,43 +255,48 @@
     </div>
   </div>
 
-  <div class="hero">
-    <div class="pct-row">
-      <span class="pct" id="heroPct">0%</span>
-      <span class="pct-of" id="heroOf">0/30</span>
-      <span class="pct-label" id="heroLabel"></span>
+  <div class="desktop-layout">
+    <div class="desktop-sidebar">
+      <div class="hero">
+        <div class="pct-row">
+          <span class="pct" id="heroPct">0%</span>
+          <span class="pct-of" id="heroOf">0/30</span>
+          <span class="pct-label" id="heroLabel"></span>
+        </div>
+        <div class="bar"><div id="progBar" style="width:0%"></div></div>
+        <div class="meta">
+          <span id="heroBingo"></span>
+          <span class="styrke-count" id="heroStyrke"></span>
+        </div>
+      </div>
+
+      <div class="prize" id="prize"></div>
+
+      <div class="user-bar">
+        <div class="avatar" id="userAvatar"></div>
+        <div class="info">
+          <div class="name" id="userName"></div>
+          <div class="team" id="userTeam"></div>
+        </div>
+        <span class="sync" id="syncStatus">⟳</span>
+        <button class="logout" id="logoutBtn" title="Switch player">⎋</button>
+      </div>
+
+      <button class="styrke-cta" id="openStyrke">
+        <span class="icon">💪</span>
+        <span class="text">
+          <span class="t1" id="styrkeCtaT1"></span>
+          <span class="t2" id="styrkeCtaT2"></span>
+        </span>
+        <span class="arrow">›</span>
+      </button>
     </div>
-    <div class="bar"><div id="progBar" style="width:0%"></div></div>
-    <div class="meta">
-      <span id="heroBingo"></span>
-      <span class="styrke-count" id="heroStyrke"></span>
+
+    <div class="desktop-main">
+      <div class="bingo" id="bingo"></div>
+      <button class="reset-btn" id="resetBtn"></button>
     </div>
   </div>
-
-  <div class="prize" id="prize"></div>
-
-  <div class="user-bar">
-    <div class="avatar" id="userAvatar"></div>
-    <div class="info">
-      <div class="name" id="userName"></div>
-      <div class="team" id="userTeam"></div>
-    </div>
-    <span class="sync" id="syncStatus">⟳</span>
-    <button class="logout" id="logoutBtn" title="Switch player">⎋</button>
-  </div>
-
-  <button class="styrke-cta" id="openStyrke">
-    <span class="icon">💪</span>
-    <span class="text">
-      <span class="t1" id="styrkeCtaT1"></span>
-      <span class="t2" id="styrkeCtaT2"></span>
-    </span>
-    <span class="arrow">›</span>
-  </button>
-
-  <div class="bingo" id="bingo"></div>
-
-  <button class="reset-btn" id="resetBtn"></button>
 </div>
 
 <div class="modal" id="styrkeModal">
