@@ -1,5 +1,5 @@
-const CACHE = "sommarbingo-v2";
-const ASSETS = ["./", "./index.html", "./coach.html", "./config.js?v=2", "./manifest.json", "./icon-192.png", "./icon-512.png"];
+const CACHE = "sommarbingo-v3";
+const ASSETS = ["./", "./index.html", "./coach.html", "./config.js?v=3", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 });

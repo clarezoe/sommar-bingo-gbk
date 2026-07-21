@@ -8,4 +8,4 @@ window.APPWRITE_TABLE_ID = "progress";
 window.DEFAULT_TEAM_CODE = "GBK";
 // Coach page access password (GDPR: protects player names from public access).
 // Change this and share only with coaches.
-window.COACH_PASSWORD = "GBK2026";
+window.COACH_PASSWORD = "20GBKSommarbingo26!";
