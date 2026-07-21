@@ -623,7 +623,7 @@ function updateRep(i, delta){
   st.done = st.count >= s.target;
   styrkeState[i] = st;
   saveStyrke();
-  if (st.done){ markStyrkeDone(i, true); } else { showStep(i); }
+  if (st.done){ markStyrkeDone(i, false); } else { showStep(i); }
 }
 
 function startTimer(i){
