@@ -519,6 +519,26 @@ function renderBingo(){
       if (isStyrke){ openStyrke(); return; }
       toggleBingo(idx);
     };
+    if (isStyrke){
+      let pressTimer = null;
+      const startPress = (e) => {
+        pressTimer = setTimeout(() => {
+          pressTimer = null;
+          if (bingoState.includes(idx) && confirm(lang === "sv" ? "Avmarkera denna Styrke-ruta?" : "Unmark this Strength cell?")){
+            setBingoDone(idx, false);
+            renderBingo();
+            scheduleSync();
+          }
+        }, 600);
+      };
+      const cancelPress = () => { if (pressTimer){ clearTimeout(pressTimer); pressTimer = null; } };
+      el.addEventListener("touchstart", startPress, {passive:true});
+      el.addEventListener("touchend", cancelPress);
+      el.addEventListener("touchcancel", cancelPress);
+      el.addEventListener("mousedown", startPress);
+      el.addEventListener("mouseup", cancelPress);
+      el.addEventListener("mouseleave", cancelPress);
+    }
     grid.appendChild(el);
   }));
   updateProgress();
