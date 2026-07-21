@@ -83,6 +83,12 @@
   .styrke-chip .stat{font-weight:800; margin-left:4px}
 
   .empty{text-align:center; color:var(--muted); padding:40px 20px; font-size:14px}
+  .mini-cell.has-note{box-shadow:0 0 0 2px var(--amber) inset}
+  .notes-list{display:flex; flex-direction:column; gap:6px}
+  .note-item{display:flex; gap:8px; padding:8px 10px; background:var(--surface2); border-radius:8px; font-size:12px; line-height:1.4}
+  .note-item.done{border-left:3px solid var(--green)}
+  .note-item .note-idx{font-weight:800; color:var(--amber-l); flex-shrink:0; min-width:32px}
+  .note-item .note-text{color:var(--text); word-break:break-word}
 
   /* Desktop */
   @media (min-width:900px){
@@ -162,6 +168,7 @@ const I18N = {
     styrkeLabel: "Styrkegymnastik:", detailTap: "Tryck för att visa/dölja detaljer",
     coachLoginTitle: "Coach-inloggning", coachLoginDesc: "Ange lösenord för att se spelarnas framsteg.",
     lblCoachPw: "Lösenord", coachPwBtn: "Logga in", coachPwWrong: "Fel lösenord.",
+    notesLabel: "Anteckningar:",
   },
   en: {
     hTitle: "Coach", hSub: "Summer Bingo U11-U13 · see all players' progress",
@@ -173,6 +180,7 @@ const I18N = {
     styrkeLabel: "Strength program:", detailTap: "Tap to show/hide details",
     coachLoginTitle: "Coach login", coachLoginDesc: "Enter password to view players' progress.",
     lblCoachPw: "Password", coachPwBtn: "Log in", coachPwWrong: "Wrong password.",
+    notesLabel: "Notes:",
   }
 };
 function t(key){ const v = I18N[lang][key]; return typeof v === "function" ? v : v; }
@@ -271,6 +279,7 @@ function renderPlayers(players){
   wrap.innerHTML = players.map((p, i) => {
     const bingo = safeParse(p.bingo, []);
     const styrke = safeParse(p.styrke, []);
+    const notes = safeParse(p.notes, {});
     const bingoDone = bingo.length;
     const styrkeCompletions = STYRKE_CELLS.filter(idx => bingo.includes(idx)).length;
     const pct = Math.round((bingoDone / 30) * 100);
@@ -300,21 +309,34 @@ function renderPlayers(players){
       <div class="detail">
         <div class="detail-section">
           <div class="label">${t("bingoLabel")}</div>
-          <div class="mini-grid">${renderMiniBingo(bingo)}</div>
+          <div class="mini-grid">${renderMiniBingo(bingo, notes)}</div>
         </div>
+        ${Object.keys(notes).length ? `<div class="detail-section">
+          <div class="label">${t("notesLabel")}</div>
+          <div class="notes-list">${renderNotes(notes, bingo)}</div>
+        </div>` : ""}
       </div>
     </div>`;
   }).join("");
 }
 
-function renderMiniBingo(bingo){
+function renderMiniBingo(bingo, notes){
   let html = "";
   for (let i = 0; i < 30; i++){
     const done = bingo.includes(i);
     const isStyrke = STYRKE_CELLS.includes(i);
-    html += `<div class="mini-cell ${done?'done':''} ${isStyrke?'styrke':''}">${i+1}</div>`;
+    const hasNote = notes && notes[i];
+    html += `<div class="mini-cell ${done?'done':''} ${isStyrke?'styrke':''} ${hasNote?'has-note':''}" title="${hasNote ? escapeHtml(notes[i]) : ''}">${i+1}${hasNote?'📝':''}</div>`;
   }
   return html;
+}
+
+function renderNotes(notes, bingo){
+  return Object.keys(notes).sort((a,b) => Number(a) - Number(b)).map(idx => {
+    const i = Number(idx);
+    const done = bingo.includes(i);
+    return `<div class="note-item ${done?'done':''}"><span class="note-idx">#${i+1}</span><span class="note-text">${escapeHtml(notes[idx])}</span></div>`;
+  }).join("");
 }
 
 function renderStyrkeChips(styrke){

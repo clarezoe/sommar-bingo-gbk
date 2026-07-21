@@ -100,6 +100,7 @@
   .cell.styrke .txt{color:#fef3c7}
   .cell.styrke .badge{position:absolute; bottom:6px; right:8px; font-size:16px}
   .cell.styrke.done{background:linear-gradient(160deg,#14532d,#166534); border-color:var(--green)}
+  .cell .note-badge{position:absolute; bottom:6px; left:8px; font-size:13px; opacity:.85}
 
   /* Login */
   .login-overlay{position:fixed; inset:0; background:linear-gradient(160deg,var(--bg),#1e293b); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px}
@@ -363,6 +364,8 @@ const I18N = {
     syncLoadFail: "✗ Kunde inte ladda",
     styrkeCellLabel: "Gör hela styrkegymnastikprogrammet",
     unmarkStyrke: "Avmarkera denna Styrke-ruta?",
+    styrkeLongPress: "1 = Avmarkera ruta\n2 = Lägg till/ändra anteckning",
+    notePrompt: label => `Anteckning för "${label}":`,
   },
   en: {
     hTitle: "Summer Bingo",
@@ -403,6 +406,8 @@ const I18N = {
     syncLoadFail: "✗ Could not load",
     styrkeCellLabel: "Do the whole strength program",
     unmarkStyrke: "Unmark this Strength cell?",
+    styrkeLongPress: "1 = Unmark cell\n2 = Add/edit note",
+    notePrompt: label => `Note for "${label}":`,
   }
 };
 function t(key){ const v = I18N[lang][key]; return typeof v === "function" ? v : v; }
@@ -485,9 +490,11 @@ const STYRKE = [
 const KEY_PLAYER = "sommarbingo.player.v2";
 const KEY_BINGO = "sommarbingo.bingo.v2";
 const KEY_STYRKE = "sommarbingo.styrke.v2";
+const KEY_NOTES = "sommarbingo.notes.v2";
 let player = JSON.parse(localStorage.getItem(KEY_PLAYER) || "null");
 let bingoState = JSON.parse(localStorage.getItem(KEY_BINGO) || "[]");
 let styrkeState = JSON.parse(localStorage.getItem(KEY_STYRKE) || "[]");
+let notesState = JSON.parse(localStorage.getItem(KEY_NOTES) || "{}");
 let currentStep = 0;
 let timerHandle = null;
 let awDatabases = null;
@@ -523,6 +530,7 @@ async function syncPush(){
     const payload = {
       player_name: player.name, team_code: player.team,
       bingo: JSON.stringify(bingoState), styrke: JSON.stringify(styrkeState),
+      notes: JSON.stringify(notesState),
       updated_at: new Date().toISOString()
     };
     try {
@@ -543,8 +551,10 @@ async function syncPull(){
     if (doc){
       bingoState = safeParse(doc.bingo, []);
       styrkeState = safeParse(doc.styrke, []);
+      notesState = safeParse(doc.notes, {});
       localStorage.setItem(KEY_BINGO, JSON.stringify(bingoState));
       localStorage.setItem(KEY_STYRKE, JSON.stringify(styrkeState));
+      localStorage.setItem(KEY_NOTES, JSON.stringify(notesState));
       renderBingo();
       setSync("ok", t("syncSynced"));
     }
@@ -633,6 +643,7 @@ function doLogout(){
 // ---------- Bingo ----------
 function saveBingo(){ localStorage.setItem(KEY_BINGO, JSON.stringify(bingoState)); scheduleSync(); }
 function saveStyrke(){ localStorage.setItem(KEY_STYRKE, JSON.stringify(styrkeState)); scheduleSync(); }
+function saveNotes(){ localStorage.setItem(KEY_NOTES, JSON.stringify(notesState)); scheduleSync(); }
 function scheduleSync(){ if (syncTimer) clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 800); }
 
 function renderBingo(){
@@ -644,36 +655,56 @@ function renderBingo(){
     const isStyrke = cell === "STYRKE";
     const label = isStyrke ? t("styrkeCellLabel") : cell[lang];
     const done = bingoState.includes(idx);
+    const hasNote = !!(notesState[idx] && notesState[idx].trim());
     const el = document.createElement("div");
     el.className = "cell" + (done ? " done" : "") + (isStyrke ? " styrke" : "");
-    el.innerHTML = `<span class="num">${idx+1}</span><span class="check">✓</span>${isStyrke?'<span class="badge">💪</span>':''}<div class="txt">${label}</div>`;
+    el.innerHTML = `<span class="num">${idx+1}</span><span class="check">✓</span>${isStyrke?'<span class="badge">💪</span>':''}${hasNote?'<span class="note-badge">📝</span>':''}<div class="txt">${label}</div>`;
     el.onclick = () => {
       if (isStyrke){ openStyrke(); return; }
       toggleBingo(idx);
     };
-    if (isStyrke){
-      let pressTimer = null;
-      const startPress = () => {
-        pressTimer = setTimeout(() => {
-          pressTimer = null;
-          if (bingoState.includes(idx) && confirm(t("unmarkStyrke"))){
-            setBingoDone(idx, false);
-            renderBingo();
-            scheduleSync();
+    // Long-press: STYRKE → unmark or note menu; regular → note editor
+    let pressTimer = null;
+    const startPress = () => {
+      pressTimer = setTimeout(() => {
+        pressTimer = null;
+        if (isStyrke){
+          if (bingoState.includes(idx)){
+            const choice = prompt(t("styrkeLongPress"), "1");
+            if (choice === "1"){ setBingoDone(idx, false); renderBingo(); scheduleSync(); }
+            else if (choice === "2"){ editNote(idx, label); }
+          } else {
+            editNote(idx, label);
           }
-        }, 600);
-      };
-      const cancelPress = () => { if (pressTimer){ clearTimeout(pressTimer); pressTimer = null; } };
-      el.addEventListener("touchstart", startPress, {passive:true});
-      el.addEventListener("touchend", cancelPress);
-      el.addEventListener("touchcancel", cancelPress);
-      el.addEventListener("mousedown", startPress);
-      el.addEventListener("mouseup", cancelPress);
-      el.addEventListener("mouseleave", cancelPress);
-    }
+        } else {
+          editNote(idx, label);
+        }
+      }, 600);
+    };
+    const cancelPress = () => { if (pressTimer){ clearTimeout(pressTimer); pressTimer = null; } };
+    el.addEventListener("touchstart", startPress, {passive:true});
+    el.addEventListener("touchend", cancelPress);
+    el.addEventListener("touchcancel", cancelPress);
+    el.addEventListener("mousedown", startPress);
+    el.addEventListener("mouseup", cancelPress);
+    el.addEventListener("mouseleave", cancelPress);
     grid.appendChild(el);
   }));
   updateProgress();
+}
+
+function editNote(idx, label){
+  const current = notesState[idx] || "";
+  const val = prompt(t("notePrompt")(label), current);
+  if (val !== null){
+    if (val.trim()){
+      notesState[idx] = val.trim();
+    } else {
+      delete notesState[idx];
+    }
+    saveNotes();
+    renderBingo();
+  }
 }
 
 function toggleBingo(idx){
@@ -879,8 +910,8 @@ document.getElementById("loginBtn").onclick = doLogin;
 document.getElementById("logoutBtn").onclick = doLogout;
 document.getElementById("resetBtn").onclick = () => {
   if (confirm(t("resetConfirm"))){
-    bingoState = []; styrkeState = []; currentStep = 0;
-    saveBingo(); saveStyrke();
+    bingoState = []; styrkeState = []; notesState = {}; currentStep = 0;
+    saveBingo(); saveStyrke(); saveNotes();
     renderBingo();
     document.getElementById("styrkeDone").classList.remove("show");
     syncPush();
