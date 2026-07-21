@@ -172,6 +172,7 @@ const I18N = {
     coachLoginTitle: "Coach-inloggning", coachLoginDesc: "Ange lösenord för att se spelarnas framsteg.",
     lblCoachPw: "Lösenord", coachPwBtn: "Logga in", coachPwWrong: "Fel lösenord.",
     notesLabel: "Anteckningar:",
+    datesLabel: "Datum:",
   },
   en: {
     hTitle: "Coach", hSub: "Summer Bingo U11-U13 · see all players' progress",
@@ -184,6 +185,7 @@ const I18N = {
     coachLoginTitle: "Coach login", coachLoginDesc: "Enter password to view players' progress.",
     lblCoachPw: "Password", coachPwBtn: "Log in", coachPwWrong: "Wrong password.",
     notesLabel: "Notes:",
+    datesLabel: "Dates:",
   }
 };
 function t(key){ const v = I18N[lang][key]; return typeof v === "function" ? v : v; }
@@ -288,7 +290,12 @@ function renderPlayers(players){
   wrap.innerHTML = players.map((p, i) => {
     const bingo = safeParse(p.bingo, []);
     const styrke = safeParse(p.styrke, []);
-    const notes = safeParse(p.notes, {});
+    const merged = safeParse(p.notes, {});
+    const notes = {}, dates = {};
+    Object.keys(merged).forEach(k => {
+      if (k.startsWith("date:")) dates[k.slice(5)] = merged[k];
+      else notes[k] = merged[k];
+    });
     const bingoDone = bingo.length;
     const styrkeCompletions = STYRKE_CELLS.filter(idx => bingo.includes(idx)).length;
     const pct = Math.round((bingoDone / 30) * 100);
@@ -318,8 +325,12 @@ function renderPlayers(players){
       <div class="detail">
         <div class="detail-section">
           <div class="label">${t("bingoLabel")}</div>
-          <div class="mini-grid">${renderMiniBingo(bingo, notes)}</div>
+          <div class="mini-grid">${renderMiniBingo(bingo, notes, dates)}</div>
         </div>
+        ${Object.keys(dates).length ? `<div class="detail-section">
+          <div class="label">${t("datesLabel")}</div>
+          <div class="dates-list">${renderDates(dates, bingo)}</div>
+        </div>` : ""}
         ${Object.keys(notes).length ? `<div class="detail-section">
           <div class="label">${t("notesLabel")}</div>
           <div class="notes-list">${renderNotes(notes, bingo)}</div>
@@ -329,15 +340,27 @@ function renderPlayers(players){
   }).join("");
 }
 
-function renderMiniBingo(bingo, notes){
+function renderMiniBingo(bingo, notes, dates){
   let html = "";
   for (let i = 0; i < 30; i++){
     const done = bingo.includes(i);
     const isStyrke = STYRKE_CELLS.includes(i);
     const hasNote = notes && notes[i];
-    html += `<div class="mini-cell ${done?'done':''} ${isStyrke?'styrke':''} ${hasNote?'has-note':''}" title="${hasNote ? escapeHtml(notes[i]) : ''}">${i+1}${hasNote?'📝':''}</div>`;
+    const dateStr = dates && dates[i] ? dates[i] : "";
+    const titleParts = [];
+    if (hasNote) titleParts.push("📝 " + notes[i]);
+    if (dateStr) titleParts.push("📅 " + dateStr);
+    html += `<div class="mini-cell ${done?'done':''} ${isStyrke?'styrke':''} ${hasNote?'has-note':''}" title="${escapeHtml(titleParts.join(' | '))}">${i+1}${hasNote?'📝':''}</div>`;
   }
   return html;
+}
+
+function renderDates(dates, bingo){
+  return Object.keys(dates).sort((a,b) => Number(a) - Number(b)).map(idx => {
+    const i = Number(idx);
+    const done = bingo.includes(i);
+    return `<div class="note-item ${done?'done':''}"><span class="note-idx">#${i+1}</span><span class="note-text">📅 ${escapeHtml(dates[idx])}</span></div>`;
+  }).join("");
 }
 
 function renderNotes(notes, bingo){
