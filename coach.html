@@ -172,6 +172,10 @@
       <button class="btn-primary" id="loadBtn"></button>
       <button class="btn-secondary" id="refreshBtn">↻</button>
     </div>
+    <div id="planSelectorWrap" style="display:none;margin-top:12px">
+      <label id="lblPlan" style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.5px"></label>
+      <select id="planSelect" style="width:100%;padding:12px 14px;border-radius:var(--radius-sm);border:2px solid var(--surface2);background:var(--bg);color:var(--text);font-size:15px;font-family:inherit"></select>
+    </div>
     <div class="status" id="status"></div>
   </div>
 
@@ -209,6 +213,7 @@ const I18N = {
     updatedPrefix: "Uppdaterad ",
     styrkeLabel: "Styrkegymnastik:", detailTap: "Tryck för att visa/dölja detaljer",
     navPlayers: "Spelare", navPlans: "Planer",
+    lblPlan: "Välj plan", allPlans: "Alla planer", legacyPlan: "Äldre (utan plan)",
     coachLoginTitle: "Coach-inloggning", coachLoginDesc: "Ange lösenord för att se spelarnas framsteg.",
     lblCoachPw: "Lösenord", coachPwBtn: "Logga in", coachPwWrong: "Fel lösenord.",
     notesLabel: "Anteckningar:",
@@ -225,6 +230,7 @@ const I18N = {
     updatedPrefix: "Updated ",
     styrkeLabel: "Strength program:", detailTap: "Tap to show/hide details",
     navPlayers: "Players", navPlans: "Plans",
+    lblPlan: "Select plan", allPlans: "All plans", legacyPlan: "Legacy (no plan)",
     coachLoginTitle: "Coach login", coachLoginDesc: "Enter password to view players' progress.",
     lblCoachPw: "Password", coachPwBtn: "Log in", coachPwWrong: "Wrong password.",
     notesLabel: "Notes:",
@@ -257,6 +263,7 @@ function applyTexts(){
   document.getElementById("coachPwBtn").textContent = t("coachPwBtn");
   document.getElementById("navPlayers").textContent = t("navPlayers");
   document.getElementById("navPlans").textContent = t("navPlans");
+  document.getElementById("lblPlan").textContent = t("lblPlan");
 }
 
 const COACH_PW_KEY = "sommarbingo.coachAuth";
@@ -309,6 +316,11 @@ function setStatus(msg, kind){
   el.textContent = msg; el.className = "status " + (kind || "");
 }
 
+let currentTeam = null;
+let teamPlans = [];
+let selectedPlanId = "all";
+let allProgressDocs = [];
+
 async function loadPlayers(){
   if (!awDatabases){ setStatus(t("notConfigured"), "err"); return; }
   const team = document.getElementById("teamCode").value.trim();
@@ -316,16 +328,81 @@ async function loadPlayers(){
   currentTeam = team;
   setStatus(t("loading"), "");
   try {
+    // Fetch plans for this team
+    const plansRes = await awDatabases.listDocuments(window.APPWRITE_DATABASE_ID, "plans");
+    teamPlans = plansRes.documents.filter(p => p.team_code === team);
+    renderPlanSelector();
+    // Fetch all progress docs for team
     const res = await awDatabases.listDocuments(
       window.APPWRITE_DATABASE_ID, window.APPWRITE_TABLE_ID,
       [window.Appwrite.Query.equal("team_code", team), window.Appwrite.Query.limit(100)]
     );
-    const players = (res.documents || []).slice().sort((a,b) => (a.player_name||"").localeCompare(b.player_name||""));
-    lastPlayers = players;
-    renderPlayers(players);
-    setStatus(t("playersCount")(players.length), "ok");
+    allProgressDocs = res.documents || [];
+    filterAndRenderPlayers();
+    setStatus(t("playersCount")(allProgressDocs.length), "ok");
     document.getElementById("lastLoad").textContent = t("updatedPrefix") + new Date().toLocaleTimeString("sv-SE");
   } catch(e){ setStatus(t("loadFail")(e.message || e), "err"); }
+}
+
+function renderPlanSelector(){
+  const wrap = document.getElementById("planSelectorWrap");
+  const select = document.getElementById("planSelect");
+  if (teamPlans.length === 0){
+    wrap.style.display = "none";
+    return;
+  }
+  wrap.style.display = "block";
+  let options = `<option value="all">${t("allPlans")}</option>`;
+  options += `<option value="legacy">${t("legacyPlan")}</option>`;
+  teamPlans.forEach(p => {
+    const name = lang === "sv" ? p.name : (p.name_en || p.name);
+    options += `<option value="${p.$id}">${escapeHtml(name)} (${p.start_date}→${p.end_date})</option>`;
+  });
+  select.innerHTML = options;
+  select.value = selectedPlanId;
+}
+
+function filterAndRenderPlayers(){
+  let players = allProgressDocs.slice();
+  if (selectedPlanId === "legacy"){
+    // Docs without a plan ID in their doc ID (old format: name_team)
+    players = players.filter(p => {
+      const id = p.$id;
+      // Old format: name_team (no plan ID suffix)
+      // New format: name_team_planId
+      // Check if ID contains a plan ID from teamPlans
+      return !teamPlans.some(plan => id.endsWith("_" + plan.$id));
+    });
+  } else if (selectedPlanId !== "all"){
+    players = players.filter(p => p.$id.endsWith("_" + selectedPlanId));
+  }
+  players.sort((a,b) => (a.player_name||"").localeCompare(b.player_name||""));
+  lastPlayers = players;
+  renderPlayers(players);
+}
+
+function getPlanItemsForCoach(){
+  if (selectedPlanId === "all" || selectedPlanId === "legacy"){
+    return null; // Use hardcoded fallback
+  }
+  const plan = teamPlans.find(p => p.$id === selectedPlanId);
+  if (!plan) return null;
+  return JSON.parse(plan.items || "[]");
+}
+
+function cellLabelForPlan(i){
+  const items = getPlanItemsForCoach();
+  if (items && items[i]){
+    const item = items[i];
+    return item[lang] || item.sv || "";
+  }
+  // Fallback to hardcoded labels
+  const isStyrke = STYRKE_CELLS.includes(i);
+  if (isStyrke) return lang === "sv" ? "Styrkegymnastik" : "Strength program";
+  const row = Math.floor(i / 6), col = i % 6;
+  const cell = BINGO_LABELS[row][col];
+  if (typeof cell === "string") return cell;
+  return cell[lang] || cell.sv;
 }
 
 function safeParse(s, fallback){ try { return JSON.parse(s) || fallback; } catch(e){ return fallback; } }
@@ -335,9 +412,10 @@ function renderPlayers(players){
   document.getElementById("teamLabel").textContent = currentTeam;
   const wrap = document.getElementById("playersList");
   if (!players.length){ wrap.innerHTML = `<div class="empty">${t("empty")}</div>`; return; }
+  const planItems = getPlanItemsForCoach();
   wrap.innerHTML = players.map((p, i) => {
     const bingo = safeParse(p.bingo, []);
-    const styrke = safeParse(p.styrke, []);
+    const cellData = safeParse(p.styrke, {});
     const merged = safeParse(p.notes, {});
     const notes = {}, dates = {};
     Object.keys(merged).forEach(k => {
@@ -346,8 +424,25 @@ function renderPlayers(players){
     });
     window._currentNotes = notes;
     window._currentDates = dates;
-    const bingoDone = bingo.length;
-    const styrkeCompletions = STYRKE_CELLS.filter(idx => bingo.includes(idx)).length;
+    // Count completed cells (considering reps/timer completion)
+    let bingoDone = 0;
+    for (let idx = 0; idx < 36; idx++){
+      if (planItems && planItems[idx]){
+        const item = planItems[idx];
+        const type = item.type || "text";
+        if (type === "text"){
+          if (bingo.includes(idx)) bingoDone++;
+        } else if (type === "reps"){
+          const d = cellData[idx];
+          if (d && d.count >= (item.target || 1)) bingoDone++;
+        } else if (type === "timer"){
+          const d = cellData[idx];
+          if (d && d.sets_done >= (item.sets || 1)) bingoDone++;
+        }
+      } else {
+        if (bingo.includes(idx)) bingoDone++;
+      }
+    }
     const pct = Math.round((bingoDone / 36) * 100);
     const updated = p.updated_at ? new Date(p.updated_at).toLocaleString("sv-SE", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"}) : "—";
     const initial = (p.player_name || "?").charAt(0).toUpperCase();
@@ -360,7 +455,6 @@ function renderPlayers(players){
           <div class="name">${escapeHtml(p.player_name)}</div>
           <div class="stats">
             <span class="bingo-stat">🎯 ${bingoDone}/36</span>
-            <span class="styrke-stat">💪 ${styrkeCompletions}/3</span>
             <span>${updated}</span>
           </div>
         </div>
@@ -375,40 +469,48 @@ function renderPlayers(players){
       <div class="detail">
         <div class="detail-section">
           <div class="label">${t("bingoLabel")}</div>
-          <div class="mini-grid">${renderMiniBingo(bingo, notes, dates, p.player_name)}</div>
+          <div class="mini-grid">${renderMiniBingo(bingo, cellData, notes, dates, p.player_name, planItems)}</div>
         </div>
       </div>
     </div>`;
   }).join("");
 }
 
-function renderMiniBingo(bingo, notes, dates, playerName){
+function renderMiniBingo(bingo, cellData, notes, dates, playerName, planItems){
   let html = "";
   for (let i = 0; i < 36; i++){
-    const done = bingo.includes(i);
-    const isStyrke = STYRKE_CELLS.includes(i);
+    let done, typeClass = "";
+    if (planItems && planItems[i]){
+      const item = planItems[i];
+      const type = item.type || "text";
+      typeClass = type;
+      if (type === "text"){
+        done = bingo.includes(i);
+      } else if (type === "reps"){
+        const d = cellData[i];
+        done = d && d.count >= (item.target || 1);
+      } else if (type === "timer"){
+        const d = cellData[i];
+        done = d && d.sets_done >= (item.sets || 1);
+      }
+    } else {
+      done = bingo.includes(i);
+      if (STYRKE_CELLS.includes(i)) typeClass = "styrke";
+    }
     const hasNote = notes && notes[i];
     const dateStr = dates && dates[i] ? dates[i].slice(5) : ""; // MM-DD
-    const label = cellLabel(i, isStyrke);
+    const label = cellLabelForPlan(i);
     const clickable = hasNote ? "clickable" : "";
     const onclick = hasNote ? `onclick="showCellDetail(${i}, ${JSON.stringify(playerName).replace(/"/g,'&quot;')})"` : "";
     const dateHtml = dateStr ? `<span class="mini-date">${dateStr}</span>` : "";
     const noteHtml = hasNote ? '<span class="mini-note">📝</span>' : '';
-    html += `<div class="mini-cell ${done?'done':''} ${isStyrke?'styrke':''} ${hasNote?'has-note':''} ${clickable}" ${onclick} title="${escapeHtml(label)}"><span class="mini-num">${i+1}</span>${noteHtml}${dateHtml}</div>`;
+    html += `<div class="mini-cell ${done?'done':''} ${typeClass} ${hasNote?'has-note':''} ${clickable}" ${onclick} title="${escapeHtml(label)}"><span class="mini-num">${i+1}</span>${noteHtml}${dateHtml}</div>`;
   }
   return html;
 }
 
-function cellLabel(i, isStyrke){
-  if (isStyrke) return lang === "sv" ? "Styrkegymnastik" : "Strength program";
-  const row = Math.floor(i / 6), col = i % 6;
-  const cell = BINGO_LABELS[row][col];
-  if (typeof cell === "string") return cell;
-  return cell[lang] || cell.sv;
-}
-
 function showCellDetail(idx, playerName){
-  const label = cellLabel(idx, STYRKE_CELLS.includes(idx));
+  const label = cellLabelForPlan(idx);
   const note = window._currentNotes && window._currentNotes[idx] || "";
   const date = window._currentDates && window._currentDates[idx] || "";
   const modal = document.getElementById("cellDetailModal");
@@ -499,6 +601,7 @@ const STYRKE_NAMES = {
 
 document.getElementById("loadBtn").onclick = loadPlayers;
 document.getElementById("refreshBtn").onclick = () => { if (currentTeam) loadPlayers(); };
+document.getElementById("planSelect").onchange = (e) => { selectedPlanId = e.target.value; filterAndRenderPlayers(); };
 document.getElementById("teamCode").addEventListener("keydown", e => { if (e.key === "Enter") loadPlayers(); });
 document.getElementById("cellDetailModal").onclick = (e) => { if (e.target.id === "cellDetailModal") closeCellDetail(); };
 
