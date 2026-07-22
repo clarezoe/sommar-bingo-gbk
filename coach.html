@@ -160,6 +160,11 @@
     </div>
   </div>
 
+  <div class="nav-links" style="display:flex;gap:8px;margin-bottom:16px">
+    <a href="./coach.html" class="active" style="flex:1;text-align:center;padding:12px;border-radius:var(--radius-sm);background:var(--green);color:#052e16;text-decoration:none;font-size:13px;font-weight:700">👥 <span id="navPlayers">Spelare</span></a>
+    <a href="./admin.html" style="flex:1;text-align:center;padding:12px;border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);text-decoration:none;font-size:13px;font-weight:700">📋 <span id="navPlans">Planer</span></a>
+  </div>
+
   <div class="card">
     <label for="teamCode" id="lblTeam"></label>
     <div class="toolbar">
@@ -203,6 +208,7 @@ const I18N = {
     loadFail: m => "Kunde inte ladda: " + m, playersCount: n => `${n} spelare`,
     updatedPrefix: "Uppdaterad ",
     styrkeLabel: "Styrkegymnastik:", detailTap: "Tryck för att visa/dölja detaljer",
+    navPlayers: "Spelare", navPlans: "Planer",
     coachLoginTitle: "Coach-inloggning", coachLoginDesc: "Ange lösenord för att se spelarnas framsteg.",
     lblCoachPw: "Lösenord", coachPwBtn: "Logga in", coachPwWrong: "Fel lösenord.",
     notesLabel: "Anteckningar:",
@@ -218,6 +224,7 @@ const I18N = {
     loadFail: m => "Could not load: " + m, playersCount: n => `${n} players`,
     updatedPrefix: "Updated ",
     styrkeLabel: "Strength program:", detailTap: "Tap to show/hide details",
+    navPlayers: "Players", navPlans: "Plans",
     coachLoginTitle: "Coach login", coachLoginDesc: "Enter password to view players' progress.",
     lblCoachPw: "Password", coachPwBtn: "Log in", coachPwWrong: "Wrong password.",
     notesLabel: "Notes:",
@@ -248,6 +255,8 @@ function applyTexts(){
   document.getElementById("coachLoginDesc").textContent = t("coachLoginDesc");
   document.getElementById("lblCoachPw").textContent = t("lblCoachPw");
   document.getElementById("coachPwBtn").textContent = t("coachPwBtn");
+  document.getElementById("navPlayers").textContent = t("navPlayers");
+  document.getElementById("navPlans").textContent = t("navPlans");
 }
 
 const COACH_PW_KEY = "sommarbingo.coachAuth";
