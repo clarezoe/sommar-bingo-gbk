@@ -19,7 +19,7 @@
     --text:#f8fafc; --muted:#94a3b8; --dim:#64748b;
     --green:#22c55e; --green-l:#4ade80;
     --amber:#f59e0b; --amber-l:#fbbf24;
-    --red:#ef4444;
+    --red:#ef4444; --blue:#3b82f6; --blue-l:#60a5fa;
     --radius:16px; --radius-sm:10px; --radius-lg:24px;
     --shadow:0 8px 32px rgba(0,0,0,.4);
     --safe-top:env(safe-area-inset-top,0px); --safe-bottom:env(safe-area-inset-bottom,0px);
@@ -30,7 +30,7 @@
     background:var(--bg); color:var(--text); min-height:100vh; min-height:100dvh;
     -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:680px; margin:0 auto; padding:calc(16px + var(--safe-top)) 16px calc(40px + var(--safe-bottom))}
+  .wrap{max-width:900px; margin:0 auto; padding:calc(16px + var(--safe-top)) 16px calc(40px + var(--safe-bottom))}
   .header{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px}
   .header h1{margin:0; font-size:22px; font-weight:800; letter-spacing:-.3px; display:flex; align-items:center; gap:8px}
   .header .sub{color:var(--muted); font-size:13px; margin-top:2px; font-weight:500}
@@ -38,65 +38,77 @@
   .lang-toggle button{background:transparent; color:var(--muted); border:none; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; border-radius:999px; font-family:inherit}
   .lang-toggle button.active{background:var(--green); color:#052e16}
 
-  .card{background:var(--surface); border-radius:var(--radius); padding:18px; margin-bottom:14px; box-shadow:var(--shadow)}
-  .card label{display:block; font-size:12px; color:var(--muted); margin:0 0 8px; font-weight:700; text-transform:uppercase; letter-spacing:.5px}
-  .toolbar{display:flex; gap:8px; flex-wrap:wrap}
-  .toolbar input{flex:1; min-width:120px; padding:14px 16px; border-radius:var(--radius-sm); border:2px solid var(--surface2); background:var(--bg); color:var(--text); font-size:17px; font-family:inherit}
-  .toolbar input:focus{outline:none; border-color:var(--green)}
   button{font-family:inherit; cursor:pointer; border:none; border-radius:var(--radius-sm); padding:14px 18px; font-size:14px; font-weight:700; transition:transform .1s}
   button:active{transform:scale(.97)}
   .btn-primary{background:var(--green); color:#052e16}
   .btn-secondary{background:var(--surface2); color:var(--text)}
+  .btn-danger{background:var(--red); color:#fff}
+  .btn-amber{background:var(--amber); color:#1e1308}
+  .btn-sm{padding:8px 14px; font-size:13px}
+
+  .card{background:var(--surface); border-radius:var(--radius); padding:18px; margin-bottom:14px; box-shadow:var(--shadow)}
+  .card label{display:block; font-size:12px; color:var(--muted); margin:0 0 8px; font-weight:700; text-transform:uppercase; letter-spacing:.5px}
+  input, textarea, select{width:100%; padding:14px 16px; border-radius:var(--radius-sm); border:2px solid var(--surface2); background:var(--bg); color:var(--text); font-size:16px; font-family:inherit; box-sizing:border-box}
+  input:focus, textarea:focus, select:focus{outline:none; border-color:var(--green)}
+  textarea{resize:vertical; min-height:60px; line-height:1.5}
+
+  /* Login */
+  .login-overlay{position:fixed; inset:0; background:linear-gradient(160deg,var(--bg),#1e293b); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px}
+  .login-card{background:var(--surface); border-radius:var(--radius-lg); padding:32px 24px; max-width:380px; width:100%; box-shadow:var(--shadow)}
+  .login-card h2{margin:0 0 6px; font-size:22px; font-weight:800}
+  .login-card .desc{color:var(--muted); font-size:13px; margin-bottom:20px; line-height:1.5}
+  .pw-row{position:relative}
+  .pw-row .toggle{position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--muted); cursor:pointer; padding:8px; display:flex; align-items:center}
+  .pw-row .toggle svg{width:20px; height:20px}
   .status{font-size:12px; color:var(--muted); margin-top:10px; font-weight:600}
   .status.err{color:var(--red)}
   .status.ok{color:var(--green)}
 
-  .players-header{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:14px}
-  .players-header h3{margin:0; font-size:17px; font-weight:800}
-  .players-header .updated{color:var(--muted); font-size:11px; font-weight:600}
+  /* Plan list */
+  .plan-card{background:var(--surface); border-radius:var(--radius); padding:18px; margin-bottom:12px; box-shadow:var(--shadow); cursor:pointer}
+  .plan-card:active{transform:scale(.98)}
+  .plan-card .plan-name{font-size:17px; font-weight:800; margin-bottom:4px}
+  .plan-card .plan-dates{color:var(--muted); font-size:13px; font-weight:600}
+  .plan-card .plan-status{display:inline-block; font-size:11px; font-weight:800; padding:3px 10px; border-radius:999px; margin-top:8px}
+  .plan-card .plan-status.published{background:var(--green); color:#052e16}
+  .plan-card .plan-status.draft{background:var(--amber); color:#1e1308}
+  .plan-card .plan-meta{display:flex; gap:12px; margin-top:8px; font-size:12px; color:var(--muted)}
+  .plan-card .plan-actions{display:flex; gap:8px; margin-top:12px}
 
-  .player-row{background:var(--surface); border-radius:var(--radius); margin-bottom:10px; overflow:hidden; box-shadow:var(--shadow)}
-  .player-row .summary{display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer}
-  .player-row .summary:active{background:var(--surface2)}
-  .player-row .avatar{width:40px; height:40px; border-radius:50%; background:var(--green); color:#052e16; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; flex-shrink:0}
-  .player-row .info{flex:1; min-width:0}
-  .player-row .info .name{font-weight:800; font-size:15px}
-  .player-row .info .stats{color:var(--muted); font-size:12px; margin-top:2px; display:flex; gap:12px; flex-wrap:wrap}
-  .player-row .info .stats .bingo-stat{color:var(--green-l)}
-  .player-row .info .stats .styrke-stat{color:var(--amber-l)}
-  .player-row .pct-circle{width:44px; height:44px; flex-shrink:0; position:relative}
-  .player-row .pct-circle svg{transform:rotate(-90deg)}
-  .player-row .pct-circle .pct-text{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:var(--green-l)}
+  /* Builder */
+  .builder-header{display:flex; align-items:center; gap:12px; margin-bottom:16px}
+  .builder-header .back{background:var(--surface2); color:var(--text); padding:10px 14px; font-size:14px; font-weight:700; border-radius:var(--radius-sm); border:none; cursor:pointer; flex-shrink:0}
+  .builder-header h2{margin:0; font-size:20px; font-weight:800; flex:1}
 
-  .player-row .detail{display:none; padding:0 16px 16px; border-top:1px solid var(--surface2)}
-  .player-row.expanded .detail{display:block}
-  .detail-section{margin-top:14px}
-  .detail-section .label{font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px}
-  .mini-grid{display:grid; grid-template-columns:repeat(10,1fr); gap:4px; max-width:100%}
-  .styrke-chips{display:flex; flex-wrap:wrap; gap:5px}
-  .styrke-chip{font-size:11px; padding:4px 8px; border-radius:6px; background:var(--surface2); color:var(--text); font-weight:600}
-  .styrke-chip.done{background:var(--green); color:#052e16}
-  .styrke-chip .stat{font-weight:800; margin-left:4px}
+  .step-indicator{display:flex; gap:8px; margin-bottom:20px}
+  .step-dot{flex:1; height:4px; border-radius:2px; background:var(--surface2)}
+  .step-dot.active{background:var(--green)}
+  .step-dot.done{background:var(--green-l)}
 
-  .empty{text-align:center; color:var(--muted); padding:40px 20px; font-size:14px}
+  .grid-builder{display:grid; grid-template-columns:repeat(6,1fr); gap:6px; margin-bottom:16px}
+  .grid-cell{aspect-ratio:1; border-radius:8px; background:var(--surface2); border:2px dashed var(--surface3); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--muted); cursor:pointer; text-align:center; padding:4px; overflow:hidden; position:relative}
+  .grid-cell:active{transform:scale(.95)}
+  .grid-cell.filled{border-style:solid; border-color:var(--green); background:var(--surface); color:var(--text)}
+  .grid-cell.filled.reps{border-color:var(--blue)}
+  .grid-cell.filled.timer{border-color:var(--amber)}
+  .grid-cell .cell-num{position:absolute; top:2px; left:4px; font-size:9px; color:var(--dim)}
+  .grid-cell .cell-type{position:absolute; top:2px; right:4px; font-size:9px}
+  .grid-cell .cell-text{font-size:10px; line-height:1.2; padding:12px 2px 2px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical}
 
-  /* Desktop */
-  @media (min-width:900px){
-    .wrap{max-width:900px; padding:32px 24px 48px}
-    .header h1{font-size:28px}
-    .header .sub{font-size:14px}
-    .player-row .summary{padding:18px 20px}
-    .player-row .avatar{width:48px; height:48px; font-size:18px}
-    .player-row .info .name{font-size:17px}
-    .player-row .info .stats{font-size:13px}
-    .player-row .pct-circle{width:52px; height:52px}
-    .player-row .pct-circle .pct-text{font-size:13px}
-    .mini-grid{grid-template-columns:repeat(10,1fr); gap:6px}
-    .mini-cell{font-size:11px}
-    .login-card{max-width:420px !important; padding:36px 32px !important}
-  }
+  /* Library sidebar */
+  .library-panel{background:var(--surface); border-radius:var(--radius); padding:16px; margin-bottom:14px}
+  .library-panel h3{margin:0 0 12px; font-size:15px; font-weight:800}
+  .library-search{margin-bottom:12px}
+  .library-list{max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:6px}
+  .library-item{background:var(--surface2); border-radius:8px; padding:10px 12px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:8px}
+  .library-item:active{background:var(--surface3)}
+  .library-item .li-text{font-size:13px; font-weight:600; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .library-item .li-type{font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px; flex-shrink:0}
+  .library-item .li-type.text{background:var(--green); color:#052e16}
+  .library-item .li-type.reps{background:var(--blue); color:#fff}
+  .library-item .li-type.timer{background:var(--amber); color:#1e1308}
 
-  /* Modal */
+  /* Item editor modal */
   .modal{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-end; justify-content:center; z-index:200; padding:0}
   .modal.show{display:flex; animation:fadeIn .2s}
   .modal-card{background:var(--surface); border-radius:var(--radius-lg) var(--radius-lg) 0 0; padding:20px; width:100%; max-width:480px; max-height:85vh; overflow-y:auto; box-shadow:0 -4px 24px rgba(0,0,0,.4); animation:slideUp .3s cubic-bezier(.34,1.56,.64,1)}
@@ -109,511 +121,815 @@
     .grip{display:none}
   }
 
-  /* Mini-grid with inline date + clickable notes */
-  .mini-cell{position:relative; aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:8px; background:var(--surface2); font-size:13px; font-weight:700; color:var(--muted); border:1px solid transparent}
-  .mini-cell.done{background:var(--green); color:#052e16; border-color:var(--green)}
-  .mini-cell.styrke{background:var(--amber); color:#1e1308; border-color:var(--amber)}
-  .mini-cell.has-note{box-shadow:0 0 0 2px var(--amber) inset}
-  .mini-cell.clickable{cursor:pointer}
-  .mini-cell.clickable:active{transform:scale(.95)}
-  .mini-num{font-size:13px; font-weight:800}
-  .mini-note{position:absolute; top:2px; right:3px; font-size:10px}
-  .mini-date{position:absolute; bottom:1px; left:0; right:0; text-align:center; font-size:8px; opacity:.75; font-weight:600}
-  .mini-cell.done .mini-date{color:#052e16}
+  .modal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px}
+  .modal-head h2{margin:0; font-size:18px; font-weight:800}
+  .modal-head .close-x{background:transparent; border:none; color:var(--muted); font-size:24px; cursor:pointer; padding:4px 8px; line-height:1}
 
-  /* Cell detail rows */
-  .cell-detail-row{display:flex; gap:10px; padding:12px; background:var(--surface2); border-radius:8px; margin-bottom:8px; align-items:flex-start}
-  .cell-detail-label{font-size:18px; flex-shrink:0}
-  .cell-detail-val{font-size:14px; color:var(--text); line-height:1.5; word-break:break-word}
-  .cell-detail-val.note-val{white-space:pre-wrap}
+  .field-group{margin-bottom:16px}
+  .field-group label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px; font-weight:700; text-transform:uppercase; letter-spacing:.5px}
+  .type-selector{display:flex; gap:8px}
+  .type-btn{flex:1; padding:12px; border-radius:var(--radius-sm); border:2px solid var(--surface2); background:var(--bg); color:var(--text); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; text-align:center}
+  .type-btn.active{border-color:var(--green); background:var(--green); color:#052e16}
+  .type-btn.active.reps{border-color:var(--blue); background:var(--blue); color:#fff}
+  .type-btn.active.timer{border-color:var(--amber); background:var(--amber); color:#1e1308}
+
+  .translate-btn{background:var(--blue); color:#fff; padding:10px 16px; font-size:13px; font-weight:700; border:none; border-radius:var(--radius-sm); cursor:pointer; font-family:inherit; margin-top:8px}
+  .translate-btn:active{transform:scale(.97)}
+  .translate-btn:disabled{opacity:.5; cursor:wait}
+  .translating{font-size:12px; color:var(--muted); margin-top:6px}
+
+  .empty{text-align:center; color:var(--muted); padding:40px 20px; font-size:14px}
+
+  .nav-links{display:flex; gap:8px; margin-bottom:16px}
+  .nav-links a{flex:1; text-align:center; padding:12px; border-radius:var(--radius-sm); background:var(--surface2); color:var(--text); text-decoration:none; font-size:13px; font-weight:700}
+  .nav-links a.active{background:var(--green); color:#052e16}
+
+  .review-item{background:var(--surface2); border-radius:8px; padding:12px; margin-bottom:6px; display:flex; gap:10px; align-items:flex-start}
+  .review-item .ri-num{font-size:11px; font-weight:800; color:var(--muted); flex-shrink:0; min-width:24px}
+  .review-item .ri-text{font-size:13px; flex:1}
+  .review-item .ri-type{font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px; flex-shrink:0}
+  .review-item .ri-type.text{background:var(--green); color:#052e16}
+  .review-item .ri-type.reps{background:var(--blue); color:#fff}
+  .review-item .ri-type.timer{background:var(--amber); color:#1e1308}
+
+  .row-2{display:flex; gap:10px}
+  .row-2 > *{flex:1}
 </style>
 </head>
 <body>
 
-<div class="login-overlay" id="coachLogin" style="position:fixed;inset:0;background:linear-gradient(160deg,var(--bg),#1e293b);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px">
-  <div class="login-card" style="background:var(--surface);border-radius:var(--radius-lg);padding:28px 24px;max-width:360px;width:100%;box-shadow:var(--shadow)">
-    <div style="text-align:center;font-size:48px;margin-bottom:8px">🔒</div>
-    <h2 style="margin:0 0 4px;text-align:center;font-size:22px;font-weight:800" id="coachLoginTitle"></h2>
-    <div style="color:var(--muted);font-size:13px;text-align:center;margin-bottom:20px;line-height:1.5" id="coachLoginDesc"></div>
-    <label style="display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;font-weight:700;text-transform:uppercase;letter-spacing:.5px" id="lblCoachPw"></label>
-    <div style="position:relative">
-      <input id="coachPw" type="password" placeholder="••••••" autocomplete="off" style="width:100%;padding:14px 44px 14px 16px;border-radius:var(--radius-sm);border:2px solid var(--surface2);background:var(--bg);color:var(--text);font-size:17px;font-family:inherit">
-      <button type="button" id="pwToggle" aria-label="Show password" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--muted);padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center">
-        <svg id="pwEyeOpen" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-        <svg id="pwEyeClosed" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+<div class="login-overlay" id="adminLogin" style="display:flex">
+  <div class="login-card">
+    <h2 id="loginTitle">Admin-inloggning</h2>
+    <div class="desc" id="loginDesc">Ange lösenord för att hantera planer.</div>
+    <div class="pw-row">
+      <input type="password" id="adminPw" placeholder="Lösenord" style="width:100%;padding-right:48px">
+      <button class="toggle" id="pwToggle">
+        <svg id="eyeOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg id="eyeClosed" style="display:none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
       </button>
     </div>
-    <button class="btn-primary" id="coachPwBtn" style="width:100%;margin-top:20px;padding:16px;font-size:16px;font-weight:800;background:var(--green);color:#052e16;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:inherit"></button>
-    <div class="status" id="coachPwStatus" style="font-size:12px;color:var(--red);text-align:center;margin-top:12px;min-height:16px"></div>
+    <button class="btn-primary" id="adminPwBtn" style="width:100%;margin-top:12px">Logga in</button>
+    <div class="status" id="loginStatus"></div>
   </div>
 </div>
 
 <div class="wrap" id="appWrap" style="display:none">
   <div class="header">
     <div>
-      <h1>📋 <span id="hTitle"></span></h1>
-      <div class="sub" id="hSub"></div>
+      <h1>📋 <span id="hTitle">Planer</span></h1>
+      <div class="sub" id="hSub">Hantera bingo-planer</div>
     </div>
     <div class="lang-toggle">
-      <button id="langSv" class="active" onclick="setLang('sv')">SV</button>
-      <button id="langEn" onclick="setLang('en')">EN</button>
+      <button id="langSv" class="active">SV</button>
+      <button id="langEn">EN</button>
     </div>
   </div>
 
-  <div class="nav-links" style="display:flex;gap:8px;margin-bottom:16px">
-    <a href="./coach.html" class="active" style="flex:1;text-align:center;padding:12px;border-radius:var(--radius-sm);background:var(--green);color:#052e16;text-decoration:none;font-size:13px;font-weight:700">👥 <span id="navPlayers">Spelare</span></a>
-    <a href="./admin.html" style="flex:1;text-align:center;padding:12px;border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);text-decoration:none;font-size:13px;font-weight:700">📋 <span id="navPlans">Planer</span></a>
+  <div class="nav-links">
+    <a href="./plan.html" id="navCoach">👥 Spelare</a>
+    <a href="./coach.html" class="active" id="navAdmin">📋 Planer</a>
   </div>
 
-  <div class="card">
-    <label for="teamCode" id="lblTeam"></label>
-    <div class="toolbar">
-      <input id="teamCode" type="text" placeholder="GBK" autocomplete="off" autocapitalize="characters">
-      <button class="btn-primary" id="loadBtn"></button>
-      <button class="btn-secondary" id="refreshBtn">↻</button>
-    </div>
-    <div id="planSelectorWrap" style="display:none;margin-top:12px">
-      <label id="lblPlan" style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.5px"></label>
-      <select id="planSelect" style="width:100%;padding:12px 14px;border-radius:var(--radius-sm);border:2px solid var(--surface2);background:var(--bg);color:var(--text);font-size:15px;font-family:inherit"></select>
-    </div>
-    <div class="status" id="status"></div>
+  <div id="planListView">
+    <button class="btn-primary" id="newPlanBtn" style="width:100%;margin-bottom:16px">+ Ny plan</button>
+    <div id="planList"></div>
   </div>
 
-  <div id="playersCard" style="display:none">
-    <div class="players-header">
-      <h3><span id="lblPlayersIn"></span> <span id="teamLabel"></span></h3>
-      <span class="updated" id="lastLoad"></span>
+  <div id="builderView" style="display:none">
+    <div class="builder-header">
+      <button class="back" id="backBtn">← Tillbaka</button>
+      <h2 id="builderTitle">Ny plan</h2>
     </div>
-    <div id="playersList"></div>
+    <div class="step-indicator" id="stepIndicator">
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+    </div>
+
+    <!-- Step 1: Name + Dates -->
+    <div id="step1" class="card">
+      <label id="lblPlanName">Plannamn (svenska)</label>
+      <input type="text" id="planNameSv" placeholder="t.ex. Sommarbingo 2026">
+      <div style="height:12px"></div>
+      <label id="lblPlanNameEn">Plannamn (engelska)</label>
+      <input type="text" id="planNameEn" placeholder="e.g. Summer Bingo 2026">
+      <div style="height:12px"></div>
+      <div class="row-2">
+        <div>
+          <label id="lblStartDate">Startdatum</label>
+          <input type="date" id="planStart">
+        </div>
+        <div>
+          <label id="lblEndDate">Slutdatum</label>
+          <input type="date" id="planEnd">
+        </div>
+      </div>
+      <div style="height:16px"></div>
+      <button class="btn-primary" id="step1Next" style="width:100%">Nästa →</button>
+    </div>
+
+    <!-- Step 2: Build Grid -->
+    <div id="step2" style="display:none">
+      <div class="card">
+        <label id="lblGrid">Bygg bingo-brädet (6×6 = 36 rutor)</label>
+        <div class="grid-builder" id="gridBuilder"></div>
+      </div>
+      <div class="library-panel">
+        <h3 id="lblLibrary">Bibliotek — klicka för att lägga till</h3>
+        <input type="text" class="library-search" id="libSearch" placeholder="Sök...">
+        <div class="library-list" id="libraryList"></div>
+      </div>
+      <button class="btn-secondary" id="step2Back" style="width:100%;margin-bottom:8px">← Tillbaka</button>
+      <button class="btn-primary" id="step2Next" style="width:100%">Nästa →</button>
+    </div>
+
+    <!-- Step 3: Review -->
+    <div id="step3" style="display:none">
+      <div class="card">
+        <h3 id="lblReview" style="margin:0 0 12px;font-size:16px">Granska plan</h3>
+        <div id="reviewSummary" style="margin-bottom:16px"></div>
+        <div id="reviewList"></div>
+      </div>
+      <button class="btn-secondary" id="step3Back" style="width:100%;margin-bottom:8px">← Tillbaka</button>
+      <button class="btn-primary" id="step3Publish" style="width:100%">Publicera</button>
+    </div>
+
+    <!-- Step 4: Done -->
+    <div id="step4" style="display:none">
+      <div class="card" style="text-align:center;padding:40px 20px">
+        <div style="font-size:48px;margin-bottom:12px">✅</div>
+        <h3 id="lblDone" style="margin:0 0 8px">Plan publicerad!</h3>
+        <p id="lblDoneSub" style="color:var(--muted);font-size:14px;margin:0 0 20px">Spelare kan nu se den.</p>
+        <button class="btn-primary" id="doneBtn" style="width:100%">OK</button>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="modal" id="cellDetailModal">
+<!-- Item Editor Modal -->
+<div class="modal" id="itemModal">
   <div class="modal-card">
     <div class="grip"></div>
-    <h2 id="cellDetailTitle" style="color:var(--text);font-size:16px;font-weight:800;margin:0 0 4px"></h2>
-    <div id="cellDetailSub" style="color:var(--muted);font-size:12px;margin-bottom:16px"></div>
-    <div id="cellDetailBody"></div>
-    <button onclick="closeCellDetail()" style="width:100%;margin-top:16px;padding:14px;font-size:14px;font-weight:700;border:none;border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);cursor:pointer;font-family:inherit">OK</button>
+    <div class="modal-head">
+      <h2 id="itemModalTitle">Ny övning</h2>
+      <button class="close-x" id="itemModalClose">×</button>
+    </div>
+    <div class="field-group">
+      <label id="lblItemSv">Text (svenska)</label>
+      <textarea id="itemSv" placeholder="t.ex. Hoppa 100 hopprep"></textarea>
+    </div>
+    <div class="field-group">
+      <label id="lblItemEn">Text (engelska)</label>
+      <textarea id="itemEn" placeholder="e.g. Jump 100 jump rope"></textarea>
+      <button class="translate-btn" id="translateBtn">🌐 Översätt automatiskt</button>
+      <div class="translating" id="translateStatus" style="display:none">Översätter...</div>
+    </div>
+    <div class="field-group">
+      <label id="lblType">Typ</label>
+      <div class="type-selector">
+        <button class="type-btn active" data-type="text" id="typeText">Text (klipp)</button>
+        <button class="type-btn" data-type="reps" id="typeReps">Räknare</button>
+        <button class="type-btn" data-type="timer" id="typeTimer">Timer</button>
+      </div>
+    </div>
+    <div id="targetFields" style="display:none">
+      <div class="field-group">
+        <label id="lblTarget">Mål</label>
+        <input type="number" id="itemTarget" placeholder="t.ex. 100" min="1">
+      </div>
+      <div class="field-group" id="setsField" style="display:none">
+        <label id="lblSets">Set</label>
+        <input type="number" id="itemSets" placeholder="t.ex. 2" min="1" value="1">
+      </div>
+    </div>
+    <div class="field-group">
+      <label id="lblHintSv">Tips (svenska, valfritt)</label>
+      <input type="text" id="itemHintSv" placeholder="Valfritt tips">
+    </div>
+    <div class="field-group">
+      <label id="lblHintEn">Tips (engelska, valfritt)</label>
+      <input type="text" id="itemHintEn" placeholder="Optional hint">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px">
+      <button class="btn-secondary" id="itemModalCancel" style="flex:1">Avbryt</button>
+      <button class="btn-primary" id="itemModalSave" style="flex:1">Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Dates Modal -->
+<div class="modal" id="datesModal">
+  <div class="modal-card">
+    <div class="grip"></div>
+    <div class="modal-head">
+      <h2 id="datesModalTitle">Redigera datum</h2>
+      <button class="close-x" id="datesModalClose">×</button>
+    </div>
+    <div class="row-2" style="margin-bottom:20px">
+      <div>
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Startdatum</label>
+        <input type="date" id="editStart">
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Slutdatum</label>
+        <input type="date" id="editEnd">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-secondary" id="datesModalCancel" style="flex:1">Avbryt</button>
+      <button class="btn-primary" id="datesModalSave" style="flex:1">Spara</button>
+    </div>
   </div>
 </div>
 
 <script>
-let awDatabases = null;
-let currentTeam = "";
+const COACH_PW_KEY = "sommarbingo.coachAuth";
 let lang = localStorage.getItem("sommarbingo.lang") || "sv";
+let currentStep = 1;
+let editingPlan = null;
+let gridItems = new Array(36).fill(null);
+let selectedCellIdx = -1;
+let itemType = "text";
+let libraryCache = [];
+let editingDatesForPlan = null;
 
 const I18N = {
   sv: {
-    hTitle: "Coach", hSub: "Sommarbingo U11-U13 · se alla spelares framsteg",
-    lblTeam: "Lagkod", loadBtn: "Ladda", lblPlayersIn: "Spelare i",
-    empty: "Inga spelare har registrerat sig för detta lagkod än.",
-    loading: "Laddar...", enterTeam: "Ange lagkod.", notConfigured: "Appwrite inte konfigurerad.",
-    loadFail: m => "Kunde inte ladda: " + m, playersCount: n => `${n} spelare`,
-    updatedPrefix: "Uppdaterad ",
-    styrkeLabel: "Styrkegymnastik:", detailTap: "Tryck för att visa/dölja detaljer",
-    navPlayers: "Spelare", navPlans: "Planer",
-    lblPlan: "Välj plan", allPlans: "Alla planer", legacyPlan: "Äldre (utan plan)",
-    coachLoginTitle: "Coach-inloggning", coachLoginDesc: "Ange lösenord för att se spelarnas framsteg.",
-    lblCoachPw: "Lösenord", coachPwBtn: "Logga in", coachPwWrong: "Fel lösenord.",
-    notesLabel: "Anteckningar:",
-    datesLabel: "Datum:",
-    noNote: "Ingen anteckning.",
-    bingoLabel: "Bingo-bricka (grön=klar, gul=styrke, 📝=anteckning — tryck för att läsa):",
+    hTitle: "Planer", hSub: "Hantera bingo-planer",
+    loginTitle: "Admin-inloggning", loginDesc: "Ange lösenord för att hantera planer.",
+    lblCoachPw: "Lösenord", pwBtn: "Logga in", pwWrong: "Fel lösenord.",
+    navCoach: "👥 Spelare", navAdmin: "📋 Planer",
+    newPlan: "+ Ny plan", noPlans: "Inga planer än. Skapa en ny!",
+    planName: "Plannamn (svenska)", planNameEn: "Plannamn (engelska)",
+    startDate: "Startdatum", endDate: "Slutdatum",
+    next: "Nästa →", back: "← Tillbaka",
+    buildGrid: "Bygg bingo-brädet (6×6 = 36 rutor)",
+    library: "Bibliotek — klicka för att lägga till",
+    search: "Sök...",
+    review: "Granska plan", publish: "Publicera",
+    done: "Plan publicerad!", doneSub: "Spelare kan nu se den.",
+    newItem: "Ny övning", editItem: "Redigera övning",
+    itemSv: "Text (svenska)", itemEn: "Text (engelska)",
+    type: "Typ", typeText: "Text (klipp)", typeReps: "Räknare", typeTimer: "Timer",
+    target: "Mål", sets: "Set",
+    hintSv: "Tips (svenska, valfritt)", hintEn: "Tips (engelska, valfritt)",
+    translate: "🌐 Översätt automatiskt", translating: "Översätter...",
+    translateFail: "Kunde inte översätta. Fyll i manuellt.",
+    cancel: "Avbryt", save: "Spara",
+    editDates: "Redigera datum", duplicate: "Duplicera", delete: "Radera",
+    deleteConfirm: "Radera denna plan? All spelarprogress för denna plan försvinner.",
+    published: "Publicerad", draft: "Utkast",
+    cells: "rutor", emptyCell: "Tom", tapToAdd: "Tryck för att lägga till",
+    editDatesTitle: "Redigera datum", datesSaved: "Datum sparade!",
+    fillAllCells: "Fyll alla 36 rutor innan du publicerar.",
+    planPublished: "Plan publicerad!",
   },
   en: {
-    hTitle: "Coach", hSub: "Summer Bingo U11-U13 · see all players' progress",
-    lblTeam: "Team code", loadBtn: "Load", lblPlayersIn: "Players in",
-    empty: "No players have registered for this team code yet.",
-    loading: "Loading...", enterTeam: "Enter team code.", notConfigured: "Appwrite not configured.",
-    loadFail: m => "Could not load: " + m, playersCount: n => `${n} players`,
-    updatedPrefix: "Updated ",
-    styrkeLabel: "Strength program:", detailTap: "Tap to show/hide details",
-    navPlayers: "Players", navPlans: "Plans",
-    lblPlan: "Select plan", allPlans: "All plans", legacyPlan: "Legacy (no plan)",
-    coachLoginTitle: "Coach login", coachLoginDesc: "Enter password to view players' progress.",
-    lblCoachPw: "Password", coachPwBtn: "Log in", coachPwWrong: "Wrong password.",
-    notesLabel: "Notes:",
-    datesLabel: "Dates:",
-    noNote: "No note.",
-    bingoLabel: "Bingo board (green=done, yellow=strength, 📝=note — tap to read):",
+    hTitle: "Plans", hSub: "Manage bingo plans",
+    loginTitle: "Admin login", loginDesc: "Enter password to manage plans.",
+    lblCoachPw: "Password", pwBtn: "Log in", pwWrong: "Wrong password.",
+    navCoach: "👥 Players", navAdmin: "📋 Plans",
+    newPlan: "+ New plan", noPlans: "No plans yet. Create one!",
+    planName: "Plan name (Swedish)", planNameEn: "Plan name (English)",
+    startDate: "Start date", endDate: "End date",
+    next: "Next →", back: "← Back",
+    buildGrid: "Build the bingo board (6×6 = 36 cells)",
+    library: "Library — click to add",
+    search: "Search...",
+    review: "Review plan", publish: "Publish",
+    done: "Plan published!", doneSub: "Players can now see it.",
+    newItem: "New item", editItem: "Edit item",
+    itemSv: "Text (Swedish)", itemEn: "Text (English)",
+    type: "Type", typeText: "Text (mark)", typeReps: "Counter", typeTimer: "Timer",
+    target: "Target", sets: "Sets",
+    hintSv: "Hint (Swedish, optional)", hintEn: "Hint (English, optional)",
+    translate: "🌐 Auto-translate", translating: "Translating...",
+    translateFail: "Could not translate. Fill in manually.",
+    cancel: "Cancel", save: "Save",
+    editDates: "Edit dates", duplicate: "Duplicate", delete: "Delete",
+    deleteConfirm: "Delete this plan? All player progress for this plan will be lost.",
+    published: "Published", draft: "Draft",
+    cells: "cells", emptyCell: "Empty", tapToAdd: "Tap to add",
+    editDatesTitle: "Edit dates", datesSaved: "Dates saved!",
+    fillAllCells: "Fill all 36 cells before publishing.",
+    planPublished: "Plan published!",
   }
 };
-function t(key){ const v = I18N[lang][key]; return typeof v === "function" ? v : v; }
+function t(k){ const v = I18N[lang][k]; return typeof v === "function" ? v : v; }
 
 function setLang(l){
-  lang = l; localStorage.setItem("sommarbingo.lang", l); document.documentElement.lang = l;
+  lang = l;
+  localStorage.setItem("sommarbingo.lang", l);
   document.getElementById("langSv").classList.toggle("active", l === "sv");
   document.getElementById("langEn").classList.toggle("active", l === "en");
-  applyTexts();
-  if (currentTeam) renderPlayers(lastPlayers);
+  applyI18n();
+}
+function applyI18n(){
+  const map = {
+    hTitle: "hTitle", hSub: "hSub", loginTitle: "loginTitle", loginDesc: "loginDesc",
+    navCoach: "navCoach", navAdmin: "navAdmin", newPlan: "newPlanBtn",
+    planName: "lblPlanName", planNameEn: "lblPlanNameEn",
+    startDate: "lblStartDate", endDate: "lblEndDate",
+    buildGrid: "lblGrid", library: "lblLibrary", search: "libSearch",
+    review: "lblReview", publish: "step3Publish",
+    done: "lblDone", doneSub: "lblDoneSub",
+    newItem: "itemModalTitle", itemSv: "lblItemSv", itemEn: "lblItemEn",
+    type: "lblType", typeText: "typeText", typeReps: "typeReps", typeTimer: "typeTimer",
+    target: "lblTarget", sets: "lblSets", hintSv: "lblHintSv", hintEn: "lblHintEn",
+    translate: "translateBtn", cancel: "itemModalCancel", save: "itemModalSave",
+    editDatesTitle: "datesModalTitle",
+  };
+  Object.entries(map).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (el){
+      if (k === "search") el.placeholder = t(k);
+      else if (k === "newPlan") el.textContent = t(k);
+      else if (k === "translate") el.textContent = t(k);
+      else if (k === "publish") el.textContent = t(k);
+      else if (k === "save") el.textContent = t(k);
+      else if (k === "cancel") el.textContent = t(k);
+      else if (k === "done") el.textContent = t(k);
+      else if (k === "doneSub") el.textContent = t(k);
+      else if (k === "newItem" || k === "editDatesTitle") el.textContent = t(k);
+      else if (k === "typeText" || k === "typeReps" || k === "typeTimer") el.textContent = t(k);
+      else if (el.tagName === "LABEL") el.textContent = t(k);
+      else el.textContent = t(k);
+    }
+  });
+  document.getElementById("loginTitle").textContent = t("loginTitle");
+  document.getElementById("loginDesc").textContent = t("loginDesc");
+  document.getElementById("adminPwBtn").textContent = t("pwBtn");
+  document.getElementById("adminPw").placeholder = t("lblCoachPw");
+  document.getElementById("step1Next").textContent = t("next");
+  document.getElementById("step2Back").textContent = t("back");
+  document.getElementById("step2Next").textContent = t("next");
+  document.getElementById("step3Back").textContent = t("back");
+  document.getElementById("itemModalCancel").textContent = t("cancel");
+  document.getElementById("itemModalSave").textContent = t("save");
+  document.getElementById("datesModalCancel").textContent = t("cancel");
+  document.getElementById("datesModalSave").textContent = t("save");
+  document.getElementById("itemModalClose").setAttribute("aria-label", t("cancel"));
+  if (currentStep <= 1) renderPlanList();
 }
 
-let lastPlayers = [];
-
-function applyTexts(){
-  document.getElementById("hTitle").textContent = t("hTitle");
-  document.getElementById("hSub").textContent = t("hSub");
-  document.getElementById("lblTeam").textContent = t("lblTeam");
-  document.getElementById("loadBtn").textContent = t("loadBtn");
-  document.getElementById("lblPlayersIn").textContent = t("lblPlayersIn");
-  document.getElementById("coachLoginTitle").textContent = t("coachLoginTitle");
-  document.getElementById("coachLoginDesc").textContent = t("coachLoginDesc");
-  document.getElementById("lblCoachPw").textContent = t("lblCoachPw");
-  document.getElementById("coachPwBtn").textContent = t("coachPwBtn");
-  document.getElementById("navPlayers").textContent = t("navPlayers");
-  document.getElementById("navPlans").textContent = t("navPlans");
-  document.getElementById("lblPlan").textContent = t("lblPlan");
-}
-
-const COACH_PW_KEY = "sommarbingo.coachAuth";
-function checkCoachAuth(){
+// ---------- Auth ----------
+function checkAuth(){
   if (localStorage.getItem(COACH_PW_KEY) === "1"){
-    document.getElementById("coachLogin").style.display = "none";
+    document.getElementById("adminLogin").style.display = "none";
     document.getElementById("appWrap").style.display = "block";
     return true;
   }
-  document.getElementById("coachLogin").style.display = "flex";
+  document.getElementById("adminLogin").style.display = "flex";
   document.getElementById("appWrap").style.display = "none";
   return false;
 }
-function tryCoachLogin(){
-  const pw = document.getElementById("coachPw").value;
-  const expected = window.COACH_PASSWORD || "";
-  if (pw && pw === expected){
+
+function doLogin(){
+  const pw = document.getElementById("adminPw").value;
+  const status = document.getElementById("loginStatus");
+  if (pw === (window.COACH_PASSWORD || "")){
     localStorage.setItem(COACH_PW_KEY, "1");
-    document.getElementById("coachPwStatus").textContent = "";
-    checkCoachAuth();
-    if (window.DEFAULT_TEAM_CODE){
-      document.getElementById("teamCode").value = window.DEFAULT_TEAM_CODE;
-      loadPlayers();
-    }
+    status.className = "status ok";
+    status.textContent = "✓";
+    checkAuth();
+    loadPlans();
+    loadLibrary();
   } else {
-    document.getElementById("coachPwStatus").textContent = t("coachPwWrong");
+    status.className = "status err";
+    status.textContent = t("pwWrong");
   }
 }
-document.getElementById("coachPwBtn").onclick = tryCoachLogin;
-document.getElementById("coachPw").addEventListener("keydown", e => { if (e.key === "Enter") tryCoachLogin(); });
-document.getElementById("pwToggle").onclick = () => {
-  const inp = document.getElementById("coachPw");
-  const open = document.getElementById("pwEyeOpen");
-  const closed = document.getElementById("pwEyeClosed");
-  if (inp.type === "password"){ inp.type = "text"; open.style.display = "none"; closed.style.display = "block"; }
-  else { inp.type = "password"; open.style.display = "block"; closed.style.display = "none"; }
-};
 
+// ---------- Appwrite ----------
+let databases;
 function initAppwrite(){
-  if (window.APPWRITE_PROJECT_ID && window.Appwrite){
-    const client = new window.Appwrite.Client()
-      .setEndpoint(window.APPWRITE_ENDPOINT)
-      .setProject(window.APPWRITE_PROJECT_ID);
-    awDatabases = new window.Appwrite.Databases(client);
+  const { Client, Databases } = window.Appwrite;
+  const client = new Client();
+  client.setEndpoint(window.APPWRITE_ENDPOINT).setProject(window.APPWRITE_PROJECT_ID);
+  databases = new Databases(client);
+}
+
+async function loadPlans(){
+  const list = document.getElementById("planList");
+  list.innerHTML = `<div class="empty">${lang === "sv" ? "Laddar..." : "Loading..."}</div>`;
+  try {
+    const res = await databases.listDocuments(window.APPWRITE_DATABASE_ID, "plans");
+    if (res.documents.length === 0){
+      list.innerHTML = `<div class="empty">${t("noPlans")}</div>`;
+      return;
+    }
+    list.innerHTML = res.documents.map(p => {
+      const statusClass = p.status === "published" ? "published" : "draft";
+      const itemCount = JSON.parse(p.items || "[]").length;
+      return `<div class="plan-card" data-id="${p.$id}">
+        <div class="plan-name">${escapeHtml(p.name)}</div>
+        <div class="plan-dates">📅 ${p.start_date} → ${p.end_date}</div>
+        <span class="plan-status ${statusClass}">${t(p.status)}</span>
+        <div class="plan-meta"><span>${itemCount} ${t("cells")}</span></div>
+        <div class="plan-actions">
+          <button class="btn-secondary btn-sm" onclick="event.stopPropagation();editDates('${p.$id}','${p.start_date}','${p.end_date}')">${t("editDates")}</button>
+          <button class="btn-secondary btn-sm" onclick="event.stopPropagation();duplicatePlan('${p.$id}')">${t("duplicate")}</button>
+          <button class="btn-danger btn-sm" onclick="event.stopPropagation();deletePlan('${p.$id}')">${t("delete")}</button>
+        </div>
+      </div>`;
+    }).join("");
+  } catch(e){
+    list.innerHTML = `<div class="empty">${escapeHtml(e.message)}</div>`;
   }
 }
 
-function setStatus(msg, kind){
-  const el = document.getElementById("status");
-  el.textContent = msg; el.className = "status " + (kind || "");
-}
-
-let teamPlans = [];
-let selectedPlanId = "all";
-let allProgressDocs = [];
-
-async function loadPlayers(){
-  if (!awDatabases){ setStatus(t("notConfigured"), "err"); return; }
-  const team = document.getElementById("teamCode").value.trim();
-  if (!team){ setStatus(t("enterTeam"), "err"); return; }
-  currentTeam = team;
-  setStatus(t("loading"), "");
+async function loadLibrary(){
   try {
-    // Fetch plans for this team
-    const plansRes = await awDatabases.listDocuments(window.APPWRITE_DATABASE_ID, "plans");
-    teamPlans = plansRes.documents.filter(p => p.team_code === team);
-    renderPlanSelector();
-    // Fetch all progress docs for team
-    const res = await awDatabases.listDocuments(
-      window.APPWRITE_DATABASE_ID, window.APPWRITE_TABLE_ID,
-      [window.Appwrite.Query.equal("team_code", team), window.Appwrite.Query.limit(100)]
-    );
-    allProgressDocs = res.documents || [];
-    filterAndRenderPlayers();
-    setStatus(t("playersCount")(allProgressDocs.length), "ok");
-    document.getElementById("lastLoad").textContent = t("updatedPrefix") + new Date().toLocaleTimeString("sv-SE");
-  } catch(e){ setStatus(t("loadFail")(e.message || e), "err"); }
+    const res = await databases.listDocuments(window.APPWRITE_DATABASE_ID, "items", undefined, 100);
+    libraryCache = res.documents;
+    renderLibrary("");
+  } catch(e){
+    console.error("Library load failed:", e);
+  }
 }
 
-function renderPlanSelector(){
-  const wrap = document.getElementById("planSelectorWrap");
-  const select = document.getElementById("planSelect");
-  if (teamPlans.length === 0){
-    wrap.style.display = "none";
+function renderLibrary(filter){
+  const list = document.getElementById("libraryList");
+  const filtered = filter ? libraryCache.filter(i =>
+    i.sv.toLowerCase().includes(filter.toLowerCase()) || i.en.toLowerCase().includes(filter.toLowerCase())
+  ) : libraryCache;
+  if (filtered.length === 0){
+    list.innerHTML = `<div class="empty" style="padding:20px">${lang === "sv" ? "Inga övningar hittades" : "No items found"}</div>`;
     return;
   }
-  wrap.style.display = "block";
-  let options = `<option value="all">${t("allPlans")}</option>`;
-  options += `<option value="legacy">${t("legacyPlan")}</option>`;
-  teamPlans.forEach(p => {
-    const name = lang === "sv" ? p.name : (p.name_en || p.name);
-    options += `<option value="${p.$id}">${escapeHtml(name)} (${p.start_date}→${p.end_date})</option>`;
-  });
-  select.innerHTML = options;
-  select.value = selectedPlanId;
-}
-
-function filterAndRenderPlayers(){
-  let players = allProgressDocs.slice();
-  if (selectedPlanId === "legacy"){
-    // Docs without a plan ID in their doc ID (old format: name_team)
-    players = players.filter(p => {
-      const id = p.$id;
-      // Old format: name_team (no plan ID suffix)
-      // New format: name_team_planId
-      // Check if ID contains a plan ID from teamPlans
-      return !teamPlans.some(plan => id.endsWith("_" + plan.$id));
-    });
-  } else if (selectedPlanId !== "all"){
-    players = players.filter(p => p.$id.endsWith("_" + selectedPlanId));
-  }
-  players.sort((a,b) => (a.player_name||"").localeCompare(b.player_name||""));
-  lastPlayers = players;
-  renderPlayers(players);
-}
-
-function getPlanItemsForCoach(){
-  if (selectedPlanId === "all" || selectedPlanId === "legacy"){
-    return null; // Use hardcoded fallback
-  }
-  const plan = teamPlans.find(p => p.$id === selectedPlanId);
-  if (!plan) return null;
-  return JSON.parse(plan.items || "[]");
-}
-
-function cellLabelForPlan(i){
-  const items = getPlanItemsForCoach();
-  if (items && items[i]){
-    const item = items[i];
-    return item[lang] || item.sv || "";
-  }
-  // Fallback to hardcoded labels
-  const isStyrke = STYRKE_CELLS.includes(i);
-  if (isStyrke) return lang === "sv" ? "Styrkegymnastik" : "Strength program";
-  const row = Math.floor(i / 6), col = i % 6;
-  const cell = BINGO_LABELS[row][col];
-  if (typeof cell === "string") return cell;
-  return cell[lang] || cell.sv;
-}
-
-function safeParse(s, fallback){ try { return JSON.parse(s) || fallback; } catch(e){ return fallback; } }
-
-function renderPlayers(players){
-  document.getElementById("playersCard").style.display = "block";
-  document.getElementById("teamLabel").textContent = currentTeam;
-  const wrap = document.getElementById("playersList");
-  if (!players.length){ wrap.innerHTML = `<div class="empty">${t("empty")}</div>`; return; }
-  const planItems = getPlanItemsForCoach();
-  wrap.innerHTML = players.map((p, i) => {
-    const bingo = safeParse(p.bingo, []);
-    const cellData = safeParse(p.styrke, {});
-    const merged = safeParse(p.notes, {});
-    const notes = {}, dates = {};
-    Object.keys(merged).forEach(k => {
-      if (k.startsWith("date:")) dates[k.slice(5)] = merged[k];
-      else notes[k] = merged[k];
-    });
-    window._currentNotes = notes;
-    window._currentDates = dates;
-    // Count completed cells (considering reps/timer completion)
-    let bingoDone = 0;
-    for (let idx = 0; idx < 36; idx++){
-      if (planItems && planItems[idx]){
-        const item = planItems[idx];
-        const type = item.type || "text";
-        if (type === "text"){
-          if (bingo.includes(idx)) bingoDone++;
-        } else if (type === "reps"){
-          const d = cellData[idx];
-          if (d && d.count >= (item.target || 1)) bingoDone++;
-        } else if (type === "timer"){
-          const d = cellData[idx];
-          if (d && d.sets_done >= (item.sets || 1)) bingoDone++;
-        }
-      } else {
-        if (bingo.includes(idx)) bingoDone++;
+  list.innerHTML = filtered.map(item => {
+    const typeLabel = {text: "Text", reps: "Rep", timer: "Time"}[item.type] || item.type;
+    const targetLabel = item.default_target ? ` (${item.default_target})` : "";
+    return `<div class="library-item" data-id="${item.$id}">
+      <span class="li-text">${escapeHtml(item.sv)}${targetLabel}</span>
+      <span class="li-type ${item.type}">${typeLabel}</span>
+    </div>`;
+  }).join("");
+  list.querySelectorAll(".library-item").forEach(el => {
+    el.onclick = () => {
+      const item = libraryCache.find(i => i.$id === el.dataset.id);
+      if (item && selectedCellIdx >= 0){
+        gridItems[selectedCellIdx] = {
+          sv: item.sv, en: item.en, type: item.type,
+          target: item.default_target || null, sets: item.default_sets || null,
+          hint_sv: item.hint_sv || "", hint_en: item.hint_en || "",
+          library_id: item.$id
+        };
+        renderGrid();
+        incrementUsage(item.$id);
       }
+    };
+  });
+}
+
+async function incrementUsage(itemId){
+  try {
+    const item = libraryCache.find(i => i.$id === itemId);
+    if (item){
+      await databases.updateDocument(window.APPWRITE_DATABASE_ID, "items", itemId, {
+        usage_count: (item.usage_count || 0) + 1
+      });
     }
-    const pct = Math.round((bingoDone / 36) * 100);
-    const updated = p.updated_at ? new Date(p.updated_at).toLocaleString("sv-SE", {day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"}) : "—";
-    const initial = (p.player_name || "?").charAt(0).toUpperCase();
-    const circumference = 2 * Math.PI * 18;
-    const dashOffset = circumference * (1 - pct/100);
-    return `<div class="player-row" id="row-${i}">
-      <div class="summary" onclick="toggleRow(${i})">
-        <div class="avatar">${initial}</div>
-        <div class="info">
-          <div class="name">${escapeHtml(p.player_name)}</div>
-          <div class="stats">
-            <span class="bingo-stat">🎯 ${bingoDone}/36</span>
-            <span>${updated}</span>
-          </div>
-        </div>
-        <div class="pct-circle">
-          <svg width="44" height="44">
-            <circle cx="22" cy="22" r="18" fill="none" stroke="var(--surface2)" stroke-width="4"/>
-            <circle cx="22" cy="22" r="18" fill="none" stroke="var(--green)" stroke-width="4" stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}" stroke-linecap="round"/>
-          </svg>
-          <div class="pct-text">${pct}%</div>
-        </div>
-      </div>
-      <div class="detail">
-        <div class="detail-section">
-          <div class="label">${t("bingoLabel")}</div>
-          <div class="mini-grid">${renderMiniBingo(bingo, cellData, notes, dates, p.player_name, planItems)}</div>
-        </div>
-      </div>
+  } catch(e){}
+}
+
+// ---------- Builder ----------
+function startNewPlan(){
+  editingPlan = null;
+  gridItems = new Array(36).fill(null);
+  currentStep = 1;
+  document.getElementById("planNameSv").value = "";
+  document.getElementById("planNameEn").value = "";
+  document.getElementById("planStart").value = "";
+  document.getElementById("planEnd").value = "";
+  document.getElementById("builderTitle").textContent = lang === "sv" ? "Ny plan" : "New plan";
+  showStep(1);
+  document.getElementById("planListView").style.display = "none";
+  document.getElementById("builderView").style.display = "block";
+  renderGrid();
+  loadLibrary();
+}
+
+async function duplicatePlan(planId){
+  try {
+    const p = await databases.getDocument(window.APPWRITE_DATABASE_ID, "plans", planId);
+    gridItems = JSON.parse(p.items || "[]");
+    while (gridItems.length < 36) gridItems.push(null);
+    document.getElementById("planNameSv").value = p.name + " (kopia)";
+    document.getElementById("planNameEn").value = (p.name_en || p.name) + " (copy)";
+    document.getElementById("planStart").value = "";
+    document.getElementById("planEnd").value = "";
+    editingPlan = null;
+    document.getElementById("builderTitle").textContent = lang === "sv" ? "Duplicera plan" : "Duplicate plan";
+    currentStep = 1;
+    showStep(1);
+    document.getElementById("planListView").style.display = "none";
+    document.getElementById("builderView").style.display = "block";
+    renderGrid();
+  } catch(e){
+    alert(e.message);
+  }
+}
+
+async function deletePlan(planId){
+  if (!confirm(t("deleteConfirm"))) return;
+  try {
+    await databases.deleteDocument(window.APPWRITE_DATABASE_ID, "plans", planId);
+    loadPlans();
+  } catch(e){
+    alert(e.message);
+  }
+}
+
+function showStep(n){
+  currentStep = n;
+  for (let i = 1; i <= 4; i++){
+    document.getElementById("step" + i).style.display = i === n ? "block" : "none";
+  }
+  const dots = document.querySelectorAll(".step-dot");
+  dots.forEach((d, i) => {
+    d.classList.remove("active", "done");
+    if (i < n - 1) d.classList.add("done");
+    else if (i === n - 1) d.classList.add("active");
+  });
+}
+
+function renderGrid(){
+  const grid = document.getElementById("gridBuilder");
+  grid.innerHTML = gridItems.map((item, i) => {
+    const filled = item ? "filled" : "";
+    const typeClass = item ? item.type : "";
+    const typeIcon = item ? ({text:"", reps:"🔢", timer:"⏱"})[item.type] : "";
+    const text = item ? item.sv : "";
+    const display = item ? `<span class="cell-text">${escapeHtml(text)}</span>` : `<span style="font-size:18px;color:var(--dim)">+</span>`;
+    return `<div class="grid-cell ${filled} ${typeClass}" data-idx="${i}">
+      <span class="cell-num">${i+1}</span>
+      ${typeIcon ? `<span class="cell-type">${typeIcon}</span>` : ""}
+      ${display}
+    </div>`;
+  }).join("");
+  grid.querySelectorAll(".grid-cell").forEach(el => {
+    el.onclick = () => {
+      const idx = Number(el.dataset.idx);
+      selectedCellIdx = idx;
+      const item = gridItems[idx];
+      if (item){
+        openItemModal(item, idx);
+      } else {
+        openItemModal(null, idx);
+      }
+    };
+  });
+}
+
+// ---------- Item Modal ----------
+function openItemModal(item, idx){
+  selectedCellIdx = idx;
+  document.getElementById("itemModalTitle").textContent = item ? t("editItem") : t("newItem");
+  document.getElementById("itemSv").value = item ? item.sv : "";
+  document.getElementById("itemEn").value = item ? item.en : "";
+  document.getElementById("itemHintSv").value = item ? (item.hint_sv || "") : "";
+  document.getElementById("itemHintEn").value = item ? (item.hint_en || "") : "";
+  itemType = item ? item.type : "text";
+  document.getElementById("itemTarget").value = item && item.target ? item.target : "";
+  document.getElementById("itemSets").value = item && item.sets ? item.sets : "1";
+  updateTypeButtons();
+  document.getElementById("itemModal").classList.add("show");
+  setTimeout(() => document.getElementById("itemSv").focus(), 100);
+}
+
+function updateTypeButtons(){
+  document.querySelectorAll(".type-btn").forEach(btn => {
+    btn.classList.remove("active", "reps", "timer");
+    if (btn.dataset.type === itemType){
+      btn.classList.add("active");
+      if (itemType === "reps") btn.classList.add("reps");
+      else if (itemType === "timer") btn.classList.add("timer");
+    }
+  });
+  const showTarget = itemType !== "text";
+  document.getElementById("targetFields").style.display = showTarget ? "block" : "none";
+  document.getElementById("setsField").style.display = itemType === "timer" ? "block" : "none";
+}
+
+async function translateText(){
+  const sv = document.getElementById("itemSv").value.trim();
+  if (!sv) return;
+  const btn = document.getElementById("translateBtn");
+  const status = document.getElementById("translateStatus");
+  btn.disabled = true;
+  status.style.display = "block";
+  status.textContent = t("translating");
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(sv)}&langpair=sv|en`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.responseStatus === 200 || data.responseData){
+      document.getElementById("itemEn").value = data.responseData.translatedText;
+      status.style.display = "none";
+    } else {
+      status.textContent = t("translateFail");
+    }
+  } catch(e){
+    status.textContent = t("translateFail");
+  }
+  btn.disabled = false;
+}
+
+function saveItem(){
+  const sv = document.getElementById("itemSv").value.trim();
+  const en = document.getElementById("itemEn").value.trim();
+  if (!sv){
+    alert(lang === "sv" ? "Fyll i svensk text" : "Fill in Swedish text");
+    return;
+  }
+  if (!en){
+    alert(lang === "sv" ? "Fyll i engelsk text" : "Fill in English text");
+    return;
+  }
+  const target = itemType !== "text" ? Number(document.getElementById("itemTarget").value) || null : null;
+  const sets = itemType === "timer" ? Number(document.getElementById("itemSets").value) || 1 : null;
+  const item = {
+    sv, en, type: itemType, target, sets,
+    hint_sv: document.getElementById("itemHintSv").value.trim(),
+    hint_en: document.getElementById("itemHintEn").value.trim(),
+  };
+  gridItems[selectedCellIdx] = item;
+  // Save to library if new
+  saveToLibrary(item);
+  closeItemModal();
+  renderGrid();
+}
+
+async function saveToLibrary(item){
+  // Check if already in library by sv text
+  const existing = libraryCache.find(i => i.sv === item.sv);
+  if (existing) return;
+  try {
+    const doc = await databases.createDocument(
+      window.APPWRITE_DATABASE_ID, "items", "unique()",
+      {
+        sv: item.sv, en: item.en, type: item.type,
+        default_target: item.target, default_sets: item.sets,
+        hint_sv: item.hint_sv, hint_en: item.hint_en,
+        usage_count: 1,
+      }
+    );
+    libraryCache.push(doc);
+    renderLibrary(document.getElementById("libSearch").value);
+  } catch(e){
+    console.error("Library save failed:", e);
+  }
+}
+
+function closeItemModal(){
+  document.getElementById("itemModal").classList.remove("show");
+}
+
+// ---------- Dates Modal ----------
+function editDates(planId, startDate, endDate){
+  editingDatesForPlan = planId;
+  document.getElementById("editStart").value = startDate;
+  document.getElementById("editEnd").value = endDate;
+  document.getElementById("datesModal").classList.add("show");
+}
+
+async function saveDates(){
+  if (!editingDatesForPlan) return;
+  const start = document.getElementById("editStart").value;
+  const end = document.getElementById("editEnd").value;
+  try {
+    await databases.updateDocument(window.APPWRITE_DATABASE_ID, "plans", editingDatesForPlan, {
+      start_date: start, end_date: end,
+      updated_at: new Date().toISOString(),
+    });
+    document.getElementById("datesModal").classList.remove("show");
+    loadPlans();
+  } catch(e){
+    alert(e.message);
+  }
+}
+
+// ---------- Publish ----------
+function goToStep2(){
+  if (!document.getElementById("planNameSv").value.trim()){
+    alert(lang === "sv" ? "Fyll i plannamn" : "Fill in plan name");
+    return;
+  }
+  showStep(2);
+}
+
+function goToStep3(){
+  const filled = gridItems.filter(i => i !== null).length;
+  if (filled < 36){
+    alert(t("fillAllCells") + ` (${filled}/36)`);
+    return;
+  }
+  renderReview();
+  showStep(3);
+}
+
+function renderReview(){
+  const name = document.getElementById("planNameSv").value;
+  const start = document.getElementById("planStart").value;
+  const end = document.getElementById("planEnd").value;
+  document.getElementById("reviewSummary").innerHTML = `
+    <div style="font-size:15px;font-weight:800">${escapeHtml(name)}</div>
+    <div style="color:var(--muted);font-size:13px;margin-top:4px">📅 ${start} → ${end}</div>
+  `;
+  document.getElementById("reviewList").innerHTML = gridItems.map((item, i) => {
+    const typeLabel = {text:"Text", reps:"Rep", timer:"Time"}[item.type];
+    const targetLabel = item.target ? ` · ${item.target}${item.sets > 1 ? "×"+item.sets : ""}` : "";
+    return `<div class="review-item">
+      <span class="ri-num">#${i+1}</span>
+      <span class="ri-text">${escapeHtml(item.sv)}${targetLabel}</span>
+      <span class="ri-type ${item.type}">${typeLabel}</span>
     </div>`;
   }).join("");
 }
 
-function renderMiniBingo(bingo, cellData, notes, dates, playerName, planItems){
-  let html = "";
-  for (let i = 0; i < 36; i++){
-    let done, typeClass = "";
-    if (planItems && planItems[i]){
-      const item = planItems[i];
-      const type = item.type || "text";
-      typeClass = type;
-      if (type === "text"){
-        done = bingo.includes(i);
-      } else if (type === "reps"){
-        const d = cellData[i];
-        done = d && d.count >= (item.target || 1);
-      } else if (type === "timer"){
-        const d = cellData[i];
-        done = d && d.sets_done >= (item.sets || 1);
-      }
-    } else {
-      done = bingo.includes(i);
-      if (STYRKE_CELLS.includes(i)) typeClass = "styrke";
-    }
-    const hasNote = notes && notes[i];
-    const dateStr = dates && dates[i] ? dates[i].slice(5) : ""; // MM-DD
-    const label = cellLabelForPlan(i);
-    const clickable = hasNote ? "clickable" : "";
-    const onclick = hasNote ? `onclick="showCellDetail(${i}, ${JSON.stringify(playerName).replace(/"/g,'&quot;')})"` : "";
-    const dateHtml = dateStr ? `<span class="mini-date">${dateStr}</span>` : "";
-    const noteHtml = hasNote ? '<span class="mini-note">📝</span>' : '';
-    html += `<div class="mini-cell ${done?'done':''} ${typeClass} ${hasNote?'has-note':''} ${clickable}" ${onclick} title="${escapeHtml(label)}"><span class="mini-num">${i+1}</span>${noteHtml}${dateHtml}</div>`;
+async function publishPlan(){
+  const name = document.getElementById("planNameSv").value.trim();
+  const nameEn = document.getElementById("planNameEn").value.trim() || name;
+  const start = document.getElementById("planStart").value;
+  const end = document.getElementById("planEnd").value;
+  if (!start || !end){
+    alert(lang === "sv" ? "Fyll i datum" : "Fill in dates");
+    return;
   }
-  return html;
+  try {
+    const now = new Date().toISOString();
+    await databases.createDocument(
+      window.APPWRITE_DATABASE_ID, "plans", "unique()",
+      {
+        name, name_en: nameEn, team_code: window.DEFAULT_TEAM_CODE || "GBK",
+        items: JSON.stringify(gridItems),
+        start_date: start, end_date: end,
+        status: "published", created_at: now, updated_at: now,
+      }
+    );
+    showStep(4);
+    loadPlans();
+  } catch(e){
+    alert(e.message);
+  }
 }
 
-function showCellDetail(idx, playerName){
-  const label = cellLabelForPlan(idx);
-  const note = window._currentNotes && window._currentNotes[idx] || "";
-  const date = window._currentDates && window._currentDates[idx] || "";
-  const modal = document.getElementById("cellDetailModal");
-  const title = document.getElementById("cellDetailTitle");
-  const sub = document.getElementById("cellDetailSub");
-  const body = document.getElementById("cellDetailBody");
-  title.textContent = `#${idx+1} · ${label}`;
-  sub.textContent = playerName;
-  let html = "";
-  if (date) html += `<div class="cell-detail-row"><span class="cell-detail-label">📅</span><span class="cell-detail-val">${escapeHtml(date)}</span></div>`;
-  if (note) html += `<div class="cell-detail-row"><span class="cell-detail-label">📝</span><span class="cell-detail-val note-val">${escapeHtml(note)}</span></div>`;
-  if (!html) html = `<div style="color:var(--muted);text-align:center;padding:20px">${t("noNote")}</div>`;
-  body.innerHTML = html;
-  modal.classList.add("show");
+function backToList(){
+  document.getElementById("builderView").style.display = "none";
+  document.getElementById("planListView").style.display = "block";
+  loadPlans();
 }
 
-function closeCellDetail(){
-  document.getElementById("cellDetailModal").classList.remove("show");
+function escapeHtml(s){
+  return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 
-function renderStyrkeChips(styrke){
-  return STYRKE_NAMES[lang].map((name, i) => {
-    const st = styrke[i] || {};
-    const done = st.done;
-    const stat = done ? "✓" : (st.count != null ? `${st.count}` : st.elapsed != null ? `${st.elapsed}s` : "—");
-    return `<span class="styrke-chip ${done?'done':''}" title="${escapeHtml(name)}">${i+1}. ${escapeHtml(name)} <span class="stat">${stat}</span></span>`;
-  }).join("");
-}
-
-function toggleRow(i){ document.getElementById("row-" + i).classList.toggle("expanded"); }
-function escapeHtml(s){ return String(s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-
-const STYRKE_CELLS = [19, 27, 30];
-const BINGO_LABELS = [
-  [
-    {sv:"Hoppa 2×100 hopprep (backa 5 om du missar)",en:"Jump 2×100 jump rope (go back 5 if you miss)"},
-    {sv:"Växla gång 20s/rusch 10s i 10 min",en:"Alternate walk 20s/sprint 10s for 10 min"},
-    {sv:"Spring 5 varv runt ett hus",en:"Run 5 laps around a house"},
-    {sv:"10 utfallssteg + 10 skridskohopp, 3 omg!",en:"10 lunges + 10 skate jumps, 3 rounds!"},
-    {sv:"Jogga 15 min utan att stanna",en:"Jog 15 min without stopping"},
-    {sv:"Eget pass i minst 15 min",en:"Your own workout, at least 15 min"},
-  ],
-  [
-    {sv:"Krabbgång 20m + spindelgång 20m, 4 omg!",en:"Crab walk 20m + spider walk 20m, 4 rounds!"},
-    {sv:"Gå baklänges 2 min + 2×30s plankan",en:"Walk backwards 2 min + 2×30s plank"},
-    {sv:"Eget pass i minst 15 min",en:"Your own workout, at least 15 min"},
-    {sv:"Kasta tennisboll mot vägg, fånga efter studs, 50 ggr",en:"Throw tennis ball at wall, catch after bounce, 50 times"},
-    {sv:"5×5 upphopp maxhöjd + 20 sit-ups",en:"5×5 max-height jumps + 20 sit-ups"},
-    {sv:"Fysisk sport i minst 1 timme",en:"Physical sport for at least 1 hour"},
-  ],
-  [
-    {sv:"9×10s snabba fötter + 3×10 burpees",en:"9×10s quick feet + 3×10 burpees"},
-    {sv:"Spela badminton minst 1 timme",en:"Play badminton at least 1 hour"},
-    {sv:"Jonglera backhand/forehand, 30 i rad",en:"Juggle backhand/forehand, 30 in a row"},
-    {sv:"Ät 2 glassar på en dag + gör bomben när du badar",en:"Eat 2 ice creams in one day + do the bomb when you swim"},
-    {sv:"Lek jage 10 min + 2×10 armhävningar",en:"Play tag 10 min + 2×10 push-ups"},
-    {sv:"Växla jogg 20s/rusch 10s i 10 min",en:"Alternate jog 20s/sprint 10s for 10 min"},
-  ],
-  [
-    {sv:"Hinderbana med 5 hinder, klara den, 3 omg!",en:"Obstacle course with 5 obstacles, complete it, 3 rounds!"},
-    "STYRKE",
-    {sv:"Spring i trappor 5 ggr, minst 10 steg",en:"Run stairs 5 times, at least 10 steps"},
-    {sv:"Cykla 20 min + 1 yoga-pose i 1 min",en:"Bike 20 min + 1 yoga pose for 1 min"},
-    {sv:"Balans på ett ben 2×30s, 3 omg",en:"Balance on one leg 2×30s, 3 rounds"},
-    {sv:"Backträning 10 ggr (10-15s löpning)",en:"Hill training 10 times (10-15s running)"},
-  ],
-  [
-    {sv:"Balansgång 1 min fram + bak",en:"Balance walk 1 min forward + backward"},
-    {sv:"Dansa till en låt (~3 min) + 4×5 hoppsmashar",en:"Dance to a song (~3 min) + 4×5 jump smashes"},
-    {sv:"8×10s snabba fötter + 3×10 burpees",en:"8×10s quick feet + 3×10 burpees"},
-    "STYRKE",
-    {sv:"Grodhopp till ett träd, minst 10m, 3 ggr!",en:"Frog jump to a tree, at least 10m, 3 times!"},
-    {sv:"Spela badminton minst 1 timme",en:"Play badminton at least 1 hour"},
-  ],
-  [
-    "STYRKE",
-    {sv:"Jogga/spring minst 20 min",en:"Jog/run at least 20 min"},
-    {sv:"Backträning 10 ggr (10-15s löpning)",en:"Hill training 10 times (10-15s running)"},
-    {sv:"Spring i trappor 5 ggr, minst 10 steg",en:"Run stairs 5 times, at least 10 steps"},
-    {sv:"Hoppa 2×100 hopprep (backa 5 om du missar)",en:"Jump 2×100 jump rope (go back 5 if you miss)"},
-    {sv:"Spring i trappor 5 ggr, minst 10 steg",en:"Run stairs 5 times, at least 10 steps"},
-  ],
-];
-const STYRKE_NAMES = {
-  sv: ["Uppvärmning","Fallskärmshopparen","Klockan","Sidoplanka","Skridskohopp","Enbensböj","Diagonalen","Skidhopp","Dips","Grodhopp","Plankan","Utfallssteg","Ryggresningar","Tåhävningar","Bulgariska utfall","Armhävningar","Defensivsteg","Fällkniv","Steg upp på bänk"],
-  en: ["Warm-up","Parachute jump","The clock","Side plank","Skate jumps","Single-leg squat","The diagonal","Skier jumps","Dips","Frog jumps","Plank","Lunges","Back raises","Calf raises","Bulgarian split squats","Push-ups","Defensive steps","V-sit","Step up onto bench"]
+// ---------- Event handlers ----------
+document.getElementById("langSv").onclick = () => setLang("sv");
+document.getElementById("langEn").onclick = () => setLang("en");
+document.getElementById("adminPwBtn").onclick = doLogin;
+document.getElementById("adminPw").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+document.getElementById("pwToggle").onclick = () => {
+  const input = document.getElementById("adminPw");
+  const open = document.getElementById("eyeOpen");
+  const closed = document.getElementById("eyeClosed");
+  if (input.type === "password"){
+    input.type = "text"; open.style.display = "none"; closed.style.display = "block";
+  } else {
+    input.type = "password"; open.style.display = "block"; closed.style.display = "none";
+  }
 };
+document.getElementById("newPlanBtn").onclick = startNewPlan;
+document.getElementById("backBtn").onclick = backToList;
+document.getElementById("step1Next").onclick = goToStep2;
+document.getElementById("step2Back").onclick = () => showStep(1);
+document.getElementById("step2Next").onclick = goToStep3;
+document.getElementById("step3Back").onclick = () => showStep(2);
+document.getElementById("step3Publish").onclick = publishPlan;
+document.getElementById("doneBtn").onclick = backToList;
+document.getElementById("libSearch").oninput = (e) => renderLibrary(e.target.value);
+document.getElementById("translateBtn").onclick = translateText;
+document.getElementById("itemModalSave").onclick = saveItem;
+document.getElementById("itemModalCancel").onclick = closeItemModal;
+document.getElementById("itemModalClose").onclick = closeItemModal;
+document.getElementById("itemModal").onclick = (e) => { if (e.target.id === "itemModal") closeItemModal(); };
+document.querySelectorAll(".type-btn").forEach(btn => {
+  btn.onclick = () => { itemType = btn.dataset.type; updateTypeButtons(); };
+});
+document.getElementById("datesModalSave").onclick = saveDates;
+document.getElementById("datesModalCancel").onclick = () => document.getElementById("datesModal").classList.remove("show");
+document.getElementById("datesModalClose").onclick = () => document.getElementById("datesModal").classList.remove("show");
+document.getElementById("datesModal").onclick = (e) => { if (e.target.id === "datesModal") document.getElementById("datesModal").classList.remove("show"); };
 
-document.getElementById("loadBtn").onclick = loadPlayers;
-document.getElementById("refreshBtn").onclick = () => { if (currentTeam) loadPlayers(); };
-document.getElementById("planSelect").onchange = (e) => { selectedPlanId = e.target.value; filterAndRenderPlayers(); };
-document.getElementById("teamCode").addEventListener("keydown", e => { if (e.key === "Enter") loadPlayers(); });
-document.getElementById("cellDetailModal").onclick = (e) => { if (e.target.id === "cellDetailModal") closeCellDetail(); };
-
+// ---------- Init ----------
 initAppwrite();
 setLang(lang);
-if (checkCoachAuth()){
-  if (window.DEFAULT_TEAM_CODE){
-    document.getElementById("teamCode").value = window.DEFAULT_TEAM_CODE;
-    loadPlayers();
-  }
-}
-if ("serviceWorker" in navigator){
-  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+if (checkAuth()){
+  loadPlans();
+  loadLibrary();
 }
 </script>
 </body>
