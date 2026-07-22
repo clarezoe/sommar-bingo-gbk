@@ -104,6 +104,21 @@
   .cell .cell-date{position:absolute; bottom:5px; right:8px; font-size:9px; color:var(--dim); font-weight:600; font-variant-numeric:tabular-nums}
   .cell.done .cell-date{color:#bbf7d0; opacity:.7}
   .cell.styrke .cell-date{color:#fbbf24; opacity:.7}
+  /* Unified cell types */
+  .cell .badge{position:absolute; top:6px; right:8px; font-size:14px}
+  .cell.reps{border-color:var(--blue); background:linear-gradient(160deg,#0f172a,#1e3a8a)}
+  .cell.reps .txt{color:#dbeafe}
+  .cell.reps.done{background:linear-gradient(160deg,#14532d,#166534); border-color:var(--green)}
+  .cell.timer{border-color:var(--amber); background:linear-gradient(160deg,#422006,#78350f)}
+  .cell.timer .txt{color:#fef3c7}
+  .cell.timer.done{background:linear-gradient(160deg,#14532d,#166534); border-color:var(--green)}
+  .cell .cell-progress{position:absolute; bottom:18px; left:0; right:0; text-align:center; font-size:10px; font-weight:800; color:var(--muted); font-variant-numeric:tabular-nums}
+  .cell.done .cell-progress{color:#bbf7d0}
+  .cell.reps .cell-progress{color:#93c5fd}
+  .cell.timer .cell-progress{color:#fbbf24}
+  /* Plan update banner */
+  .plan-update-banner{display:none; background:var(--amber); color:#1e1308; padding:12px 16px; border-radius:var(--radius-sm); margin-bottom:12px; font-size:13px; font-weight:700; text-align:center}
+  .plan-update-banner.show{display:block; animation:fadeIn .3s}
 
   /* Login */
   .login-overlay{position:fixed; inset:0; background:linear-gradient(160deg,var(--bg),#1e293b); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px}
@@ -292,6 +307,8 @@
 
       <div class="prize" id="prize"></div>
 
+      <div class="plan-update-banner" id="planUpdateBanner"></div>
+
       <div class="user-bar">
         <div class="avatar" id="userAvatar"></div>
         <div class="info">
@@ -302,7 +319,7 @@
         <button class="logout" id="logoutBtn" title="Switch player">⎋</button>
       </div>
 
-      <button class="styrke-cta" id="openStyrke">
+      <button class="styrke-cta" id="openStyrke" style="display:none">
         <span class="icon">💪</span>
         <span class="text">
           <span class="t1" id="styrkeCtaT1"></span>
@@ -573,6 +590,12 @@ let timerHandle = null;
 let awDatabases = null;
 let syncTimer = null;
 
+// Plan state
+let activePlans = [];
+let currentPlan = null;
+let currentPlanId = null;
+let cellDataState = JSON.parse(localStorage.getItem("sommarbingo.celldata.v3") || "{}");
+
 // ---------- Appwrite ----------
 function initAppwrite(){
   if (window.APPWRITE_PROJECT_ID && window.APPWRITE_PROJECT_ID !== "YOUR_PROJECT_ID" && window.Appwrite){
@@ -593,7 +616,65 @@ function setSync(status, msg){
 }
 
 function rowId(){
-  return (player.name + "_" + player.team).toLowerCase().replace(/[^a-z0-9._-]/g, "_").slice(0, 36);
+  const base = (player.name + "_" + player.team).toLowerCase().replace(/[^a-z0-9._-]/g, "_").slice(0, 30);
+  if (currentPlanId){
+    return (base + "_" + currentPlanId).slice(0, 36);
+  }
+  return base.slice(0, 36);
+}
+
+// ---------- Plans ----------
+async function fetchActivePlans(){
+  if (!awDatabases || !player) return [];
+  try {
+    const today = todayStr();
+    const res = await awDatabases.listDocuments(window.APPWRITE_DATABASE_ID, "plans");
+    return res.documents.filter(p =>
+      p.status === "published" &&
+      p.team_code === player.team &&
+      p.start_date <= today && p.end_date >= today
+    );
+  } catch(e){
+    console.warn("Plan fetch failed:", e);
+    return [];
+  }
+}
+
+function getPlanItems(){
+  if (currentPlan){
+    return JSON.parse(currentPlan.items || "[]");
+  }
+  // Fallback: hardcoded BINGO
+  return BINGO.flat().map(cell => {
+    if (cell === "STYRKE") return {sv:"Styrkegymnastik", en:"Strength program", type:"text"};
+    return {sv: cell.sv, en: cell.en, type: "text"};
+  });
+}
+
+function getCellLabel(idx){
+  const items = getPlanItems();
+  const item = items[idx];
+  if (!item) return "";
+  return item[lang] || item.sv || "";
+}
+
+function getCellType(idx){
+  const items = getPlanItems();
+  const item = items[idx];
+  return item ? (item.type || "text") : "text";
+}
+
+function isCellComplete(idx){
+  if (!bingoState.includes(idx)) return false;
+  const type = getCellType(idx);
+  if (type === "text") return true;
+  const data = cellDataState[idx];
+  if (!data) return false;
+  const items = getPlanItems();
+  const item = items[idx];
+  if (type === "reps") return data.count >= (item.target || 1);
+  if (type === "timer") return data.sets_done >= (item.sets || 1);
+  return true;
 }
 
 async function syncPush(){
@@ -602,7 +683,7 @@ async function syncPush(){
   try {
     const payload = {
       player_name: player.name, team_code: player.team,
-      bingo: JSON.stringify(bingoState), styrke: JSON.stringify(styrkeState),
+      bingo: JSON.stringify(bingoState), styrke: JSON.stringify(cellDataState),
       notes: JSON.stringify(mergeNotesAndDates(notesState, datesState)),
       updated_at: new Date().toISOString()
     };
@@ -623,13 +704,13 @@ async function syncPull(){
     const doc = await awDatabases.getDocument(window.APPWRITE_DATABASE_ID, window.APPWRITE_TABLE_ID, rowId());
     if (doc){
       bingoState = safeParse(doc.bingo, []);
-      styrkeState = safeParse(doc.styrke, []);
+      cellDataState = safeParse(doc.styrke, {});
       const merged = safeParse(doc.notes, {});
       const split = splitNotesAndDates(merged);
       notesState = split.notes;
       datesState = split.dates;
       localStorage.setItem(KEY_BINGO, JSON.stringify(bingoState));
-      localStorage.setItem(KEY_STYRKE, JSON.stringify(styrkeState));
+      localStorage.setItem("sommarbingo.celldata.v3", JSON.stringify(cellDataState));
       localStorage.setItem(KEY_NOTES, JSON.stringify(notesState));
       localStorage.setItem(KEY_DATES, JSON.stringify(datesState));
       renderBingo();
@@ -706,8 +787,7 @@ function doLogin(){
   document.getElementById("userName").textContent = name;
   document.getElementById("userTeam").textContent = team;
   document.getElementById("userAvatar").textContent = name.charAt(0).toUpperCase();
-  renderBingo();
-  syncPull();
+  initPlans();
 }
 
 function doLogout(){
@@ -718,10 +798,10 @@ function doLogout(){
 }
 
 // ---------- Bingo ----------
-function saveBingo(){ localStorage.setItem(KEY_BINGO, JSON.stringify(bingoState)); scheduleSync(); }
-function saveStyrke(){ localStorage.setItem(KEY_STYRKE, JSON.stringify(styrkeState)); scheduleSync(); }
-function saveNotes(){ localStorage.setItem(KEY_NOTES, JSON.stringify(notesState)); scheduleSync(); }
-function saveDates(){ localStorage.setItem(KEY_DATES, JSON.stringify(datesState)); scheduleSync(); }
+function saveBingo(){ localStorage.setItem(KEY_BINGO, JSON.stringify(bingoState)); saveStateForPlan(); scheduleSync(); }
+function saveStyrke(){ localStorage.setItem(KEY_STYRKE, JSON.stringify(styrkeState)); saveStateForPlan(); scheduleSync(); }
+function saveNotes(){ localStorage.setItem(KEY_NOTES, JSON.stringify(notesState)); saveStateForPlan(); scheduleSync(); }
+function saveDates(){ localStorage.setItem(KEY_DATES, JSON.stringify(datesState)); saveStateForPlan(); scheduleSync(); }
 function scheduleSync(){ if (syncTimer) clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 800); }
 
 // Dates are stored in the same cloud `notes` field with "date:" prefix keys
@@ -745,26 +825,38 @@ function renderBingo(){
   const grid = document.getElementById("bingo");
   if (!grid) return;
   grid.innerHTML = "";
-  BINGO.forEach((row, r) => row.forEach((cell, c) => {
-    const idx = r*6 + c;
-    const isStyrke = cell === "STYRKE";
-    const label = isStyrke ? t("styrkeCellLabel") : cell[lang];
-    const done = bingoState.includes(idx);
+  const items = getPlanItems();
+  for (let idx = 0; idx < 36; idx++){
+    const item = items[idx];
+    if (!item) continue;
+    const type = item.type || "text";
+    const label = item[lang] || item.sv || "";
+    const done = isCellComplete(idx);
     const hasNote = !!(notesState[idx] && notesState[idx].trim());
     const dateStr = datesState[idx] || "";
     const el = document.createElement("div");
-    el.className = "cell" + (done ? " done" : "") + (isStyrke ? " styrke" : "");
-    el.innerHTML = `<span class="num">${idx+1}</span><span class="check">✓</span>${isStyrke?'<span class="badge">💪</span>':''}${hasNote?'<span class="note-badge">📝</span>':''}<div class="txt">${label}</div>${dateStr?`<div class="cell-date">${dateStr}</div>`:''}`;
-    el.onclick = () => {
-      if (isStyrke){ openStyrke(); return; }
-      toggleBingo(idx);
-    };
+    el.className = "cell" + (done ? " done" : "") + (type !== "text" ? " " + type : "");
+    // Type badge and progress
+    let typeBadge = "";
+    let progressText = "";
+    if (type === "reps"){
+      typeBadge = '<span class="badge">🔢</span>';
+      const count = cellDataState[idx]?.count || 0;
+      progressText = `<div class="cell-progress">${count}/${item.target || 0}</div>`;
+    } else if (type === "timer"){
+      typeBadge = '<span class="badge">⏱</span>';
+      const setsDone = cellDataState[idx]?.sets_done || 0;
+      const totalSets = item.sets || 1;
+      progressText = `<div class="cell-progress">${setsDone}/${totalSets}</div>`;
+    }
+    el.innerHTML = `<span class="num">${idx+1}</span><span class="check">✓</span>${typeBadge}${hasNote?'<span class="note-badge">📝</span>':''}<div class="txt">${label}</div>${progressText}${dateStr?`<div class="cell-date">${dateStr}</div>`:''}`;
+    el.onclick = () => onCellTap(idx, type, label);
     // Long-press: open action menu
     let pressTimer = null;
     const startPress = () => {
       pressTimer = setTimeout(() => {
         pressTimer = null;
-        openCellActions(idx, label, isStyrke);
+        openCellActions(idx, label, type);
       }, 600);
     };
     const cancelPress = () => { if (pressTimer){ clearTimeout(pressTimer); pressTimer = null; } };
@@ -775,8 +867,136 @@ function renderBingo(){
     el.addEventListener("mouseup", cancelPress);
     el.addEventListener("mouseleave", cancelPress);
     grid.appendChild(el);
-  }));
+  }
   updateProgress();
+}
+
+function onCellTap(idx, type, label){
+  if (type === "text"){
+    toggleBingo(idx);
+  } else {
+    openCellCounter(idx, type, label);
+  }
+}
+
+function openCellCounter(idx, type, label){
+  const modal = document.getElementById("editModal");
+  const title = document.getElementById("editModalTitle");
+  const sub = document.getElementById("editModalSub");
+  const body = document.getElementById("editModalBody");
+  const saveBtn = document.getElementById("editModalSave");
+  const cancelBtn = document.getElementById("editModalCancel");
+  const closeBtn = document.getElementById("editModalClose");
+
+  const items = getPlanItems();
+  const item = items[idx];
+  const data = cellDataState[idx] || {count: 0, sets_done: 0};
+
+  title.textContent = `#${idx+1}`;
+  sub.textContent = label;
+
+  if (type === "reps"){
+    const target = item.target || 1;
+    body.innerHTML = `
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:48px;font-weight:800;color:var(--green-l)" id="repCount">${data.count || 0}</div>
+        <div style="color:var(--muted);font-size:14px;margin-bottom:20px">/ ${target}</div>
+        <div style="display:flex;gap:12px;justify-content:center">
+          <button id="repMinus" style="width:64px;height:64px;border-radius:50%;background:var(--surface2);color:var(--text);border:none;font-size:28px;font-weight:800;cursor:pointer;font-family:inherit">−</button>
+          <button id="repPlus" style="width:64px;height:64px;border-radius:50%;background:var(--green);color:#052e16;border:none;font-size:28px;font-weight:800;cursor:pointer;font-family:inherit">+</button>
+        </div>
+        <button id="repDone" style="width:100%;margin-top:20px;padding:14px;font-size:14px;font-weight:800;border:none;border-radius:var(--radius-sm);background:var(--amber);color:#1e1308;cursor:pointer;font-family:inherit">${data.count >= target ? '✓ ' : ''}${lang === 'sv' ? 'Klar' : 'Done'}</button>
+      </div>`;
+    const countEl = document.getElementById("repCount");
+    let count = data.count || 0;
+    document.getElementById("repMinus").onclick = () => { count = Math.max(0, count - 1); countEl.textContent = count; updateRepDoneBtn(); };
+    document.getElementById("repPlus").onclick = () => { count = count + 1; countEl.textContent = count; updateRepDoneBtn(); };
+    function updateRepDoneBtn(){
+      const btn = document.getElementById("repDone");
+      if (!btn) return;
+      btn.textContent = (count >= target ? '✓ ' : '') + (lang === 'sv' ? 'Klar' : 'Done');
+    }
+    document.getElementById("repDone").onclick = () => {
+      cellDataState[idx] = {count, sets_done: 0};
+      if (count >= target && !bingoState.includes(idx)){ bingoState.push(idx); datesState[idx] = todayStr(); }
+      saveCellData(); saveBingo(); saveDates(); closeEditModal(); renderBingo();
+    };
+    saveBtn.style.display = "none";
+  } else if (type === "timer"){
+    const target = item.target || 60;
+    const totalSets = item.sets || 1;
+    let setsDone = data.sets_done || 0;
+    let timeLeft = target;
+    let timerRunning = false;
+    let timerInt = null;
+
+    body.innerHTML = `
+      <div style="text-align:center;padding:20px 0">
+        <div style="font-size:48px;font-weight:800;color:var(--amber-l)" id="timerDisplay">${fmtTime(target)}</div>
+        <div style="color:var(--muted);font-size:14px;margin-bottom:8px">${lang === 'sv' ? 'Set' : 'Set'} ${setsDone + 1}/${totalSets}</div>
+        <div style="display:flex;gap:12px;justify-content:center;margin-bottom:20px">
+          <button id="timerStart" style="width:80px;height:56px;border-radius:12px;background:var(--green);color:#052e16;border:none;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit">${lang === 'sv' ? 'Start' : 'Start'}</button>
+          <button id="timerReset" style="width:80px;height:56px;border-radius:12px;background:var(--surface2);color:var(--text);border:none;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit">${lang === 'sv' ? 'Återställ' : 'Reset'}</button>
+        </div>
+        <button id="setDone" style="width:100%;padding:14px;font-size:14px;font-weight:800;border:none;border-radius:var(--radius-sm);background:var(--amber);color:#1e1308;cursor:pointer;font-family:inherit">${lang === 'sv' ? 'Set klart' : 'Set done'}</button>
+      </div>`;
+
+    const display = document.getElementById("timerDisplay");
+    const startBtn = document.getElementById("timerStart");
+
+    startBtn.onclick = () => {
+      if (timerRunning){
+        clearInterval(timerInt); timerRunning = false;
+        startBtn.textContent = lang === 'sv' ? 'Fortsätt' : 'Resume';
+      } else {
+        timerRunning = true;
+        startBtn.textContent = lang === 'sv' ? 'Paus' : 'Pause';
+        timerInt = setInterval(() => {
+          timeLeft--;
+          display.textContent = fmtTime(timeLeft);
+          if (timeLeft <= 0){
+            clearInterval(timerInt); timerRunning = false;
+            startBtn.textContent = lang === 'sv' ? 'Start' : 'Start';
+            if (navigator.vibrate) navigator.vibrate(200);
+          }
+        }, 1000);
+      }
+    };
+    document.getElementById("timerReset").onclick = () => {
+      clearInterval(timerInt); timerRunning = false; timeLeft = target;
+      display.textContent = fmtTime(timeLeft);
+      startBtn.textContent = lang === 'sv' ? 'Start' : 'Start';
+    };
+    document.getElementById("setDone").onclick = () => {
+      clearInterval(timerInt);
+      setsDone++;
+      if (setsDone >= totalSets){
+        cellDataState[idx] = {count: 0, sets_done: setsDone};
+        if (!bingoState.includes(idx)){ bingoState.push(idx); datesState[idx] = todayStr(); }
+        saveCellData(); saveBingo(); saveDates(); closeEditModal(); renderBingo();
+      } else {
+        cellDataState[idx] = {count: 0, sets_done: setsDone};
+        saveCellData();
+        timeLeft = target;
+        display.textContent = fmtTime(timeLeft);
+        // Update set counter
+        const setLabel = body.querySelector('div[style*="margin-bottom:8px"]');
+        if (setLabel) setLabel.textContent = `${lang === 'sv' ? 'Set' : 'Set'} ${setsDone + 1}/${totalSets}`;
+      }
+    };
+    saveBtn.style.display = "none";
+  }
+
+  cancelBtn.textContent = t("btnCancel");
+  cancelBtn.onclick = () => { if (timerHandle) clearInterval(timerHandle); closeEditModal(); };
+  closeBtn.onclick = () => { if (timerHandle) clearInterval(timerHandle); closeEditModal(); };
+  modal.classList.add("show");
+}
+
+function saveCellData(){
+  localStorage.setItem("sommarbingo.celldata.v3", JSON.stringify(cellDataState));
+  saveStateForPlan();
+  scheduleSync();
 }
 
 // SVG icons for action menu
@@ -786,7 +1006,7 @@ const ICONS = {
   date: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
 };
 
-function openCellActions(idx, label, isStyrke){
+function openCellActions(idx, label, type){
   const modal = document.getElementById("actionModal");
   const title = document.getElementById("actionModalTitle");
   const sub = document.getElementById("actionModalSub");
@@ -797,8 +1017,8 @@ function openCellActions(idx, label, isStyrke){
   sub.textContent = label;
 
   const actions = [];
-  if (isStyrke && bingoState.includes(idx)){
-    actions.push({ icon: ICONS.unmark, label: t("menuUnmark"), danger: true, fn: () => { setBingoDone(idx, false); renderBingo(); scheduleSync(); closeActionModal(); } });
+  if (bingoState.includes(idx)){
+    actions.push({ icon: ICONS.unmark, label: t("menuUnmark"), danger: true, fn: () => { setBingoDone(idx, false); delete cellDataState[idx]; saveCellData(); renderBingo(); closeActionModal(); } });
   }
   actions.push({ icon: ICONS.note, label: t("menuNote"), fn: () => { closeActionModal(); setTimeout(() => editNote(idx, label), 200); } });
   actions.push({ icon: ICONS.date, label: t("menuDate"), fn: () => { closeActionModal(); setTimeout(() => editDate(idx, label), 200); } });
@@ -910,16 +1130,16 @@ function todayStr(){
 
 function updateProgress(){
   const total = 36;
-  const n = bingoState.length;
+  const completed = [];
+  for (let i = 0; i < 36; i++){ if (isCellComplete(i)) completed.push(i); }
+  const n = completed.length;
   const pct = Math.min(100, Math.round(n/total*100));
-  const styrkeCells = [];
-  BINGO.forEach((row, r) => row.forEach((cell, c) => { if (cell === "STYRKE") styrkeCells.push(r*6 + c); }));
-  const styrkeDone = styrkeCells.filter(idx => bingoState.includes(idx)).length;
   document.getElementById("progBar").style.width = pct + "%";
   document.getElementById("heroPct").textContent = pct + "%";
   document.getElementById("heroOf").textContent = `${n}/${total}`;
   document.getElementById("heroBingo").textContent = t("heroBingo")(n);
-  document.getElementById("heroStyrke").textContent = t("heroStyrke")(styrkeDone);
+  const styrkeEl = document.getElementById("heroStyrke");
+  if (styrkeEl) styrkeEl.style.display = "none"; // Hide styrke stat — no longer relevant
   document.getElementById("prize").classList.toggle("show", n === total);
 }
 
@@ -1100,8 +1320,8 @@ document.getElementById("loginBtn").onclick = doLogin;
 document.getElementById("logoutBtn").onclick = doLogout;
 document.getElementById("resetBtn").onclick = () => {
   if (confirm(t("resetConfirm"))){
-    bingoState = []; styrkeState = []; notesState = {}; datesState = {}; currentStep = 0;
-    saveBingo(); saveStyrke(); saveNotes(); saveDates();
+    bingoState = []; cellDataState = {}; notesState = {}; datesState = {}; currentStep = 0;
+    saveBingo(); saveCellData(); saveNotes(); saveDates();
     renderBingo();
     document.getElementById("styrkeDone").classList.remove("show");
     syncPush();
@@ -1118,10 +1338,112 @@ if (player){
   document.getElementById("userName").textContent = player.name;
   document.getElementById("userTeam").textContent = player.team;
   document.getElementById("userAvatar").textContent = player.name.charAt(0).toUpperCase();
-  renderBingo();
-  syncPull();
+  initPlans();
 } else {
   showLogin();
+}
+
+async function initPlans(){
+  activePlans = await fetchActivePlans();
+  if (activePlans.length === 0){
+    // Fallback to hardcoded BINGO
+    currentPlan = null;
+    currentPlanId = null;
+    renderBingo();
+    syncPull();
+  } else if (activePlans.length === 1){
+    // Single plan — show directly
+    currentPlan = activePlans[0];
+    currentPlanId = activePlans[0].$id;
+    checkPlanUpdate();
+    resetStateForPlan();
+    renderBingo();
+    syncPull();
+  } else {
+    // Multiple plans — show board list
+    renderBoardList();
+  }
+}
+
+function resetStateForPlan(){
+  // Reset state when switching plans (each plan has independent progress)
+  bingoState = [];
+  cellDataState = {};
+  notesState = {};
+  datesState = {};
+  // Load from localStorage if available for this plan
+  const planKey = currentPlanId || "fallback";
+  const stored = localStorage.getItem(`sommarbingo.state.${planKey}`);
+  if (stored){
+    const s = JSON.parse(stored);
+    bingoState = s.bingo || [];
+    cellDataState = s.celldata || {};
+    notesState = s.notes || {};
+    datesState = s.dates || {};
+  }
+}
+
+function saveStateForPlan(){
+  const planKey = currentPlanId || "fallback";
+  localStorage.setItem(`sommarbingo.state.${planKey}`, JSON.stringify({
+    bingo: bingoState, celldata: cellDataState, notes: notesState, dates: datesState
+  }));
+}
+
+function checkPlanUpdate(){
+  if (!currentPlan) return;
+  const key = `sommarbingo.planUpdate.${currentPlan.$id}`;
+  const lastSeen = localStorage.getItem(key);
+  const updatedAt = currentPlan.updated_at;
+  if (lastSeen && updatedAt && lastSeen < updatedAt){
+    showPlanUpdateBanner();
+  }
+  localStorage.setItem(key, updatedAt || new Date().toISOString());
+}
+
+function showPlanUpdateBanner(){
+  const banner = document.getElementById("planUpdateBanner");
+  if (banner){
+    banner.classList.add("show");
+    setTimeout(() => banner.classList.remove("show"), 5000);
+  }
+}
+
+function renderBoardList(){
+  const main = document.querySelector(".desktop-main") || document.querySelector(".wrap");
+  // Hide bingo grid, show board list
+  const bingoSection = document.getElementById("bingo");
+  if (bingoSection) bingoSection.style.display = "none";
+  // Build board list cards
+  let listHtml = `<div id="boardList" style="padding:20px 0">
+    <h2 style="font-size:20px;font-weight:800;margin:0 0 16px">${lang === "sv" ? "Aktiva planer" : "Active plans"}</h2>`;
+  activePlans.forEach(p => {
+    const name = lang === "sv" ? p.name : (p.name_en || p.name);
+    listHtml += `<div class="card" style="cursor:pointer" data-plan-id="${p.$id}">
+      <div style="font-size:17px;font-weight:800">${escapeHtmlSimple(name)}</div>
+      <div style="color:var(--muted);font-size:13px;margin-top:4px">📅 ${p.start_date} → ${p.end_date}</div>
+    </div>`;
+  });
+  listHtml += `</div>`;
+  // Insert before bingo grid
+  const grid = document.getElementById("bingo");
+  if (grid && grid.parentElement){
+    const existing = document.getElementById("boardList");
+    if (existing) existing.remove();
+    grid.parentElement.insertAdjacentHTML("afterbegin", listHtml);
+    document.querySelectorAll("#boardList .card").forEach(card => {
+      card.onclick = () => {
+        const planId = card.dataset.planId;
+        currentPlan = activePlans.find(p => p.$id === planId);
+        currentPlanId = planId;
+        document.getElementById("boardList").remove();
+        checkPlanUpdate();
+        resetStateForPlan();
+        renderBingo();
+        syncPull();
+      };
+    });
+  }
 }
 
 // ---------- PWA Service Worker ----------
