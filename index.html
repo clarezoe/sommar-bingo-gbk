@@ -642,12 +642,25 @@ async function fetchActivePlans(){
 
 function getPlanItems(){
   if (currentPlan){
-    return JSON.parse(currentPlan.items || "[]");
+    const items = JSON.parse(currentPlan.items || "[]");
+    return normalizePlanItems(items);
   }
   // Fallback: hardcoded BINGO
   return BINGO.flat().map(cell => {
-    if (cell === "STYRKE") return {sv:"Styrkegymnastik", en:"Strength program", type:"text"};
+    if (cell === "STYRKE") return {sv:"Styrkegymnastik", en:"Strength program", type:"styrke"};
     return {sv: cell.sv, en: cell.en, type: "text"};
+  });
+}
+
+// Normalize plan items: convert legacy "STYRKE" string cells into guided styrke cells.
+function normalizePlanItems(items){
+  return items.map(cell => {
+    if (cell === "STYRKE") return {sv:"Styrkegymnastik", en:"Strength program", type:"styrke"};
+    if (typeof cell === "object" && cell && cell.type === "styrke") return cell;
+    if (typeof cell === "object" && cell && cell.sv === "Styrkegymnastik" && cell.en === "Strength program"){
+      return Object.assign({}, cell, {type: "styrke"});
+    }
+    return cell;
   });
 }
 
@@ -667,7 +680,7 @@ function getCellType(idx){
 function isCellComplete(idx){
   if (!bingoState.includes(idx)) return false;
   const type = getCellType(idx);
-  if (type === "text") return true;
+  if (type === "text" || type === "styrke") return true;
   const data = cellDataState[idx];
   if (!data) return false;
   const items = getPlanItems();
@@ -848,6 +861,8 @@ function renderBingo(){
       const setsDone = cellDataState[idx]?.sets_done || 0;
       const totalSets = item.sets || 1;
       progressText = `<div class="cell-progress">${setsDone}/${totalSets}</div>`;
+    } else if (type === "styrke"){
+      typeBadge = '<span class="badge">💪</span>';
     }
     el.innerHTML = `<span class="num">${idx+1}</span><span class="check">✓</span>${typeBadge}${hasNote?'<span class="note-badge">📝</span>':''}<div class="txt">${label}</div>${progressText}${dateStr?`<div class="cell-date">${dateStr}</div>`:''}`;
     el.onclick = () => onCellTap(idx, type, label);
@@ -872,7 +887,9 @@ function renderBingo(){
 }
 
 function onCellTap(idx, type, label){
-  if (type === "text"){
+  if (type === "styrke"){
+    openStyrke();
+  } else if (type === "text"){
     toggleBingo(idx);
   } else {
     openCellCounter(idx, type, label);
@@ -1284,10 +1301,12 @@ function checkAllStyrkeDone(){
   const allDone = STYRKE.every((_, i) => (styrkeState[i] || {}).done);
   document.getElementById("styrkeDone").classList.toggle("show", allDone);
   if (allDone){
+    // Find every styrke cell on the current board (plan or hardcoded fallback)
+    const items = getPlanItems();
     const styrkeCells = [];
-    BINGO.forEach((row, r) => row.forEach((cell, c) => {
-      if (cell === "STYRKE") styrkeCells.push(r*6 + c);
-    }));
+    items.forEach((item, idx) => {
+      if (item && (item.type === "styrke" || item === "STYRKE")) styrkeCells.push(idx);
+    });
     const nextCell = styrkeCells.find(idx => !bingoState.includes(idx));
     if (nextCell !== undefined){
       setBingoDone(nextCell, true);
