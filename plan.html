@@ -113,6 +113,7 @@
   .mini-cell{position:relative; aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:8px; background:var(--surface2); font-size:13px; font-weight:700; color:var(--muted); border:1px solid transparent}
   .mini-cell.done{background:var(--green); color:#052e16; border-color:var(--green)}
   .mini-cell.styrke{background:var(--amber); color:#1e1308; border-color:var(--amber)}
+  .mini-cell.styrke.done{background:var(--green); color:#052e16; border-color:var(--green)}
   .mini-cell.has-note{box-shadow:0 0 0 2px var(--amber) inset}
   .mini-cell.clickable{cursor:pointer}
   .mini-cell.clickable:active{transform:scale(.95)}
@@ -483,7 +484,7 @@ function renderMiniBingo(bingo, cellData, notes, dates, playerName, planItems){
       const item = planItems[i];
       const type = item.type || "text";
       typeClass = type;
-      if (type === "text"){
+      if (type === "text" || type === "styrke"){
         done = bingo.includes(i);
       } else if (type === "reps"){
         const d = cellData[i];
