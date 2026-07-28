@@ -866,16 +866,29 @@ function renderBingo(){
     }
     el.innerHTML = `<span class="num">${idx+1}</span><span class="check">✓</span>${typeBadge}${hasNote?'<span class="note-badge">📝</span>':''}<div class="txt">${label}</div>${progressText}${dateStr?`<div class="cell-date">${dateStr}</div>`:''}`;
     el.onclick = () => onCellTap(idx, type, label);
-    // Long-press: open action menu
+    // Long-press: open action menu. Cancel on scroll (touchmove past a small
+    // threshold) so swiping the page doesn't fire the long-press popup.
     let pressTimer = null;
-    const startPress = () => {
+    let startX = 0, startY = 0;
+    const MOVE_TOL = 10;
+    const startPress = (e) => {
+      if (e.touches && e.touches[0]){ startX = e.touches[0].clientX; startY = e.touches[0].clientY; }
       pressTimer = setTimeout(() => {
         pressTimer = null;
         openCellActions(idx, label, type);
       }, 600);
     };
     const cancelPress = () => { if (pressTimer){ clearTimeout(pressTimer); pressTimer = null; } };
+    const onMove = (e) => {
+      if (!pressTimer) return;
+      if (e.touches && e.touches[0]){
+        const dx = e.touches[0].clientX - startX;
+        const dy = e.touches[0].clientY - startY;
+        if (Math.hypot(dx, dy) > MOVE_TOL) cancelPress();
+      } else { cancelPress(); }
+    };
     el.addEventListener("touchstart", startPress, {passive:true});
+    el.addEventListener("touchmove", onMove, {passive:true});
     el.addEventListener("touchend", cancelPress);
     el.addEventListener("touchcancel", cancelPress);
     el.addEventListener("mousedown", startPress);
