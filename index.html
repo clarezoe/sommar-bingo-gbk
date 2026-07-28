@@ -61,6 +61,15 @@
   .prize.show{display:block; animation:slideUp .4s}
   @keyframes slideUp{from{opacity:0; transform:translateY(10px)}to{opacity:1; transform:translateY(0)}}
 
+  /* Undo toast — appears after marking a text cell, lets you undo a misfire tap */
+  .undo-toast{position:fixed; left:50%; bottom:20px; transform:translateX(-50%); z-index:300; display:none; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--surface3); border-radius:999px; padding:12px 16px 12px 18px; box-shadow:0 8px 28px rgba(0,0,0,.45); max-width:92vw}
+  .undo-toast.show{display:flex; animation:slideUpToast .25s}
+  .undo-toast .msg{color:var(--text); font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px}
+  .undo-toast .msg .tick{color:var(--green-l); font-weight:800}
+  .undo-toast .undo-btn{background:var(--amber); color:#1e1308; border:none; border-radius:999px; padding:8px 16px; font-weight:800; font-size:13px; cursor:pointer; font-family:inherit; white-space:nowrap}
+  .undo-toast .undo-btn:active{transform:scale(.96)}
+  @keyframes slideUpToast{from{opacity:0; transform:translate(-50%,20px)}to{opacity:1; transform:translate(-50%,0)}}
+
   /* User bar */
   .user-bar{display:flex; align-items:center; gap:10px; background:var(--surface); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:16px; font-size:13px}
   .user-bar .avatar{width:32px; height:32px; border-radius:50%; background:var(--green); color:#052e16; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; flex-shrink:0}
@@ -309,6 +318,11 @@
 
       <div class="plan-update-banner" id="planUpdateBanner"></div>
 
+      <div class="undo-toast" id="undoToast">
+        <span class="msg"><span class="tick">✓</span><span id="undoMsg"></span></span>
+        <button class="undo-btn" id="undoBtn"></button>
+      </div>
+
       <div class="user-bar">
         <div class="avatar" id="userAvatar"></div>
         <div class="info">
@@ -432,6 +446,8 @@ const I18N = {
     datePrompt: label => `Datum för "${label}" (ÅÅÅÅ-MM-DD):`,
     menuTitle: "Välj åtgärd",
     menuUnmark: "Avmarkera ruta",
+    undoMark: "Markerad",
+    undo: "Ångra",
     menuNote: "Anteckning",
     menuDate: "Ändra datum",
     editNoteTitle: "Anteckning",
@@ -487,6 +503,8 @@ const I18N = {
     datePrompt: label => `Date for "${label}" (YYYY-MM-DD):`,
     menuTitle: "Choose action",
     menuUnmark: "Unmark cell",
+    undoMark: "Marked",
+    undo: "Undo",
     menuNote: "Note",
     menuDate: "Change date",
     editNoteTitle: "Note",
@@ -774,6 +792,11 @@ function applyTexts(){
   document.getElementById("closeStyrke").textContent = t("closeStyrke");
   document.getElementById("styrkeDone").textContent = t("styrkeDone");
   document.getElementById("heroLabel").textContent = t("heroLabel");
+  // Refresh visible undo toast labels on language switch
+  const undoMsgEl = document.getElementById("undoMsg");
+  const undoBtnEl = document.getElementById("undoBtn");
+  if (undoMsgEl) undoMsgEl.textContent = t("undoMark");
+  if (undoBtnEl) undoBtnEl.textContent = t("undo");
   updateProgress();
 }
 
@@ -1136,14 +1159,40 @@ function escapeHtmlSimple(s){
 
 function toggleBingo(idx){
   const i = bingoState.indexOf(idx);
+  let nowMarked = false;
   if (i >= 0){
     bingoState.splice(i,1);
     delete datesState[idx];
   } else {
     bingoState.push(idx);
     datesState[idx] = todayStr();
+    nowMarked = true;
   }
   saveBingo(); saveDates(); renderBingo();
+  if (nowMarked) showUndoToast(idx);
+}
+
+// Undo toast: shows briefly after marking a text cell so a misfire tap
+// can be undone without digging into the long-press menu.
+let undoTimer = null;
+let undoLastIdx = null;
+function showUndoToast(idx){
+  const toast = document.getElementById("undoToast");
+  const msg = document.getElementById("undoMsg");
+  const btn = document.getElementById("undoBtn");
+  if (!toast) return;
+  undoLastIdx = idx;
+  msg.textContent = t("undoMark");
+  btn.textContent = t("undo");
+  toast.classList.add("show");
+  if (undoTimer) clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => { toast.classList.remove("show"); undoLastIdx = null; }, 4000);
+}
+function hideUndoToast(){
+  const toast = document.getElementById("undoToast");
+  if (toast) toast.classList.remove("show");
+  if (undoTimer){ clearTimeout(undoTimer); undoTimer = null; }
+  undoLastIdx = null;
 }
 
 function setBingoDone(idx, done){
@@ -1348,6 +1397,13 @@ document.getElementById("closeStyrke").onclick = closeStyrke;
 document.getElementById("styrkeModal").onclick = (e) => { if (e.target.id === "styrkeModal") closeStyrke(); };
 document.getElementById("editModal").onclick = (e) => { if (e.target.id === "editModal") closeEditModal(); };
 document.getElementById("actionModal").onclick = (e) => { if (e.target.id === "actionModal") closeActionModal(); };
+document.getElementById("undoBtn").onclick = () => {
+  if (undoLastIdx !== null){
+    const idx = undoLastIdx;
+    hideUndoToast();
+    toggleBingo(idx); // removes the freshly-added mark; nowMarked=false so no re-toast
+  }
+};
 document.getElementById("loginBtn").onclick = doLogin;
 document.getElementById("logoutBtn").onclick = doLogout;
 document.getElementById("resetBtn").onclick = () => {
